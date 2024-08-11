@@ -1,29 +1,26 @@
 import tkinter as tk
+from tkinter import ttk
 
-class ResizableFrame(tk.Frame):
-    def __init__(self, parent, **kwargs):
-        super().__init__(parent, **kwargs)
-        self.bind("<Button-1>", self.start_resize)
-        self.bind("<B1-Motion>", self.perform_resize)
-
-    def start_resize(self, event):
-        self._drag_data = {"x": event.x, "y": event.y}
-
-    def perform_resize(self, event):
-        dx = event.x - self._drag_data["x"]
-        dy = event.y - self._drag_data["y"]
-        
-        new_width = self.winfo_width() + dx
-        new_height = self.winfo_height() + dy
-
-        if new_width > 50 and new_height > 50:  # Đảm bảo kích thước không quá nhỏ
-            self.config(width=new_width, height=new_height)
-            self._drag_data = {"x": event.x, "y": event.y}
+def update_value(val):
+    voltage_value.set(f"UA1 = {float(val):.2f} V")
 
 root = tk.Tk()
-root.geometry("400x300")
+root.title("Voltage Display")
 
-frame = ResizableFrame(root, width=200, height=150, bg="lightblue")
-frame.place(x=50, y=50)
+# Scale for voltage adjustment
+scale_frame = ttk.Frame(root, padding="10")
+scale_frame.grid(row=0, column=0, sticky=(tk.W, tk.E))
+
+scale = tk.Scale(scale_frame, from_=-10, to=10, orient=tk.HORIZONTAL, length=300,
+                 tickinterval=1, resolution=0.01, showvalue=False, command=update_value)
+scale.set(0)
+scale.grid(row=0, column=0)
+
+# Label to show the current voltage
+voltage_value = tk.StringVar()
+voltage_value.set("UA1 = 0.00 V")
+
+voltage_label = ttk.Label(scale_frame, textvariable=voltage_value, font=("Arial", 16))
+voltage_label.grid(row=1, column=0, pady=10)
 
 root.mainloop()

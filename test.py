@@ -1,29 +1,35 @@
 import tkinter as tk
-from tkinter import ttk
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+
+def show_u1(event):
+    label1.config(text="U1")
+
+def show_u2(event):
+    label2.config(text="U2")
 
 # Tạo cửa sổ chính
 root = tk.Tk()
-root.title("Hệ tọa độ với Matplotlib trong Tkinter")
+root.title("Vertical Frame Example")
 
-# Tạo một figure cho matplotlib
-fig, ax = plt.subplots()
+# Tạo frame đầu tiên
+frame1 = tk.Frame(root, bg="lightblue")
+frame1.grid(row=0, column=0)
+frame1.grid_propagate(False)  # Tắt khả năng thay đổi kích thước của frame1
 
-# Vẽ các đường lưới (grid lines) và thiết lập giới hạn trục
-ax.grid(True)
-ax.set_xlim(0, 10)
-ax.set_ylim(0, 100)
+# Tạo frame thứ hai
+frame2 = tk.Frame(root, bg="lightgreen")
+frame2.grid(row=1, column=0)
+frame2.grid_propagate(False)  # Tắt khả năng thay đổi kích thước của frame2
 
-# Tạo canvas để hiển thị biểu đồ trong cửa sổ Tkinter
-canvas = FigureCanvasTkAgg(fig, master=root)
-canvas.draw()
-canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
+# Thêm nhãn vào các frame để hiển thị U1 và U2
+label1 = tk.Label(frame1, text="Click here for U1", bg="lightblue", width=20, height=5)
+label1.pack(expand=True)
 
-# Tạo thanh công cụ tương tác
-toolbar = NavigationToolbar2Tk(canvas, root)
-toolbar.update()
-canvas.get_tk_widget().pack()
+label2 = tk.Label(frame2, text="Click here for U2", bg="lightgreen", width=20, height=5)
+label2.pack(expand=True)
+
+# Gắn sự kiện click vào label
+label1.bind("<Button-1>", show_u1)
+label2.bind("<Button-1>", show_u2)
 
 # Chạy vòng lặp chính
 root.mainloop()

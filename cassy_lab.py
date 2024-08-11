@@ -91,8 +91,32 @@ def changeValueOptionMenu(data , value):
 
 
     return
-    
+
+
+
+
+def show_u1(event):
+    label1.config(text="U1")
+
+def show_u2(event):
+    label2.config(text="U2")
+
 def defCassy(frameMain):
+    global label1
+    global label2
+    frameCassy = ttk.Frame(frameMain, borderwidth=5, relief="sunken", padding="10")
+    frameCassy.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5, pady=5)
+    label1 = tk.Label(frameCassy, text="Click here for U1", bg="lightblue", width=20, height=5)
+    label1.grid(row=0, column=0)
+
+    label2 = tk.Label(frameCassy, text="Click here for U2", bg="lightgreen", width=20, height=5)
+    label2.grid(row=1, column=0)
+
+    # Gắn sự kiện click vào label
+    label1.bind("<Button-1>", show_u1)
+    label2.bind("<Button-1>", show_u2)
+
+
     print(1)
 def defFFT(frameMain):
     print(2)

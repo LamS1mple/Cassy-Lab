@@ -1,47 +1,72 @@
 import tkinter as tk
-from tkinter import PhotoImage
+from tkinter import ttk
 
-# Khởi tạo cửa sổ chính
-window = tk.Tk()
-window.title("Custom Cursor Example")
+def correct_action():
+    print("Correct button clicked")
 
-# Tạo một Frame chính với kích thước cố định và màu nền
-frame = tk.Frame(window, width=300, height=200, bg='lightblue')
-frame.pack_propagate(False)  # Ngăn không cho frame tự động điều chỉnh kích thước
-frame.pack()
+def delete_action():
+    print("Delete button clicked")
 
-# Tạo Canvas trong Frame để chứa hình ảnh con trỏ
-canvas = tk.Canvas(frame, width=300, height=200, bg='lightblue')
-canvas.pack(fill=tk.BOTH, expand=True)
+def help_action():
+    print("Help button clicked")
 
-# Tải hình ảnh con trỏ
-cursor_image = PhotoImage(file='four-arrows.png')  # Thay đổi đường dẫn hình ảnh con trỏ
+def close_action():
+    root.destroy()
 
-# Tạo hình ảnh con trỏ trên Canvas
-cursor_id = canvas.create_image(0, 0, image=cursor_image, anchor=tk.NW)
-canvas.itemconfig(cursor_id, state=tk.HIDDEN)  # Ẩn hình ảnh con trỏ ngay từ đầu
+root = tk.Tk()
+root.title("Sensor Input Settings")
 
-# Cập nhật vị trí của hình ảnh con trỏ khi di chuyển chuột
-def update_cursor_position(event):
-    canvas.coords(cursor_id, event.x, event.y)
+# Frame for the main content
+frame = ttk.Frame(root, padding="10")
+frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-# Hiển thị con trỏ khi chuột di vào Canvas
-def show_cursor(event):
-    canvas.itemconfig(cursor_id, state=tk.NORMAL)  # Hiển thị hình ảnh con trỏ
-    update_cursor_position(event)
+# Input A1 label and display
+ttk.Label(frame, text="Input A1:").grid(row=0, column=0, sticky=tk.W)
+ttk.Label(frame, text="No Sensor Box").grid(row=0, column=1, sticky=tk.W)
 
-# Ẩn con trỏ khi chuột rời khỏi Canvas
-def hide_cursor(event):
-    canvas.itemconfig(cursor_id, state=tk.HIDDEN)  # Ẩn hình ảnh con trỏ
+# Quantity dropdown
+ttk.Label(frame, text="Quantity:").grid(row=1, column=0, sticky=tk.W)
+quantity = ttk.Combobox(frame, values=["Voltage UA1"])
+quantity.set("Voltage UA1")
+quantity.grid(row=1, column=1, sticky=(tk.W, tk.E))
 
-# Đặt kiểu con trỏ cho Canvas và Frame
-canvas.config(cursor='none')  # Ẩn con trỏ mặc định trên Canvas
-frame.config(cursor='none')   # Ẩn con trỏ mặc định trên Frame
+# Meas. Range dropdown
+ttk.Label(frame, text="Meas. Range:").grid(row=2, column=0, sticky=tk.W)
+meas_range = ttk.Combobox(frame, values=["-10 V .. 10 V"])
+meas_range.set("-10 V .. 10 V")
+meas_range.grid(row=2, column=1, sticky=(tk.W, tk.E))
 
-# Liên kết sự kiện với các hàm
-canvas.bind('<Enter>', show_cursor)
-canvas.bind('<Leave>', hide_cursor)
-canvas.bind('<Motion>', update_cursor_position)
+# Record Measured Values section
+record_frame = ttk.Labelframe(frame, text="Record Measured Values", padding="10")
+record_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E))
 
-# Chạy vòng lặp chính của Tkinter
-window.mainloop()
+value_type = tk.StringVar(value="Instantaneous")
+
+tk.Radiobutton(record_frame, text="Instantaneous Values", variable=value_type, value="Instantaneous").grid(row=0, column=0, sticky=tk.W)
+tk.Radiobutton(record_frame, text="Averaged Values", variable=value_type, value="Averaged").grid(row=1, column=0, sticky=tk.W)
+
+avg_time_label = ttk.Label(record_frame, text="100 ms")
+avg_time_label.grid(row=1, column=1, sticky=tk.W)
+
+tk.Radiobutton(record_frame, text="RMS Values (cos φ)", variable=value_type, value="RMS").grid(row=2, column=0, sticky=tk.W)
+
+# Zero Point section
+zero_point_frame = ttk.Labelframe(frame, text="Zero Point", padding="10")
+zero_point_frame.grid(row=4, column=0, columnspan=2, sticky=(tk.W, tk.E))
+
+zero_point = tk.StringVar(value="Middle")
+
+tk.Radiobutton(zero_point_frame, text="Left", variable=zero_point, value="Left").grid(row=0, column=0, sticky=tk.W)
+tk.Radiobutton(zero_point_frame, text="Middle", variable=zero_point, value="Middle").grid(row=0, column=1, sticky=tk.W)
+tk.Radiobutton(zero_point_frame, text="Right", variable=zero_point, value="Right").grid(row=0, column=2, sticky=tk.W)
+
+# Buttons
+button_frame = ttk.Frame(frame)
+button_frame.grid(row=5, column=0, columnspan=2, sticky=(tk.E, tk.W))
+
+ttk.Button(button_frame, text="Correct", command=correct_action).grid(row=0, column=0, sticky=tk.W)
+ttk.Button(button_frame, text="Help", command=help_action).grid(row=0, column=1, sticky=tk.W)
+ttk.Button(button_frame, text="Delete", command=delete_action).grid(row=0, column=2, sticky=tk.W)
+ttk.Button(button_frame, text="Close", command=close_action).grid(row=0, column=3, sticky=tk.W)
+
+root.mainloop()
