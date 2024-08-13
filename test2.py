@@ -1,59 +1,63 @@
-import tkinter
+import tkinter as tk
+from tkinter import ttk
 
-import numpy as np
+def create_gui():
+    root = tk.Tk()
+    root.title("Quantity Settings")
 
-# Implement the default Matplotlib key bindings.
-from matplotlib.backend_bases import key_press_handler
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
-                                               NavigationToolbar2Tk)
-from matplotlib.figure import Figure
+    # Select Quantity
+    tk.Label(root, text="Select Quantity:").grid(row=0, column=0, padx=10, pady=5)
+    quantity_combo = ttk.Combobox(root, values=[1, 2, 3, 4, 5])
+    quantity_combo.grid(row=0, column=1, padx=10, pady=5)
+    quantity_combo.current(1)
 
-root = tkinter.Tk()
-root.wm_title("Embedding in Tk")
+    # Buttons for New Quantity and Delete Quantity
+    tk.Button(root, text="New Quantity").grid(row=0, column=2, padx=10, pady=5)
+    tk.Button(root, text="Delete Quantity").grid(row=0, column=3, padx=10, pady=5)
 
-fig = Figure(figsize=(5, 4), dpi=100)
-t = np.arange(0, 3, .01)
-ax = fig.add_subplot()
-line, = ax.plot(t, 2 * np.sin(2 * np.pi * t))
-ax.set_xlabel("time [s]")
-ax.set_ylabel("f(t)")
+    # Properties frame
+    prop_frame = tk.LabelFrame(root, text="Properties", padx=10, pady=10)
+    prop_frame.grid(row=1, column=0, columnspan=4, padx=10, pady=10, sticky="ew")
 
-canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
-canvas.draw()
+    # Parameter or Formula
+    tk.Radiobutton(prop_frame, text="Parameter (Manual Entry in Table or Here) =", value=1).grid(row=0, column=0, sticky='w')
+    param_entry = tk.Entry(prop_frame)
+    param_entry.grid(row=0, column=1, padx=5)
 
-# pack_toolbar=False will make it easier to use a layout manager later on.
-toolbar = NavigationToolbar2Tk(canvas, root, pack_toolbar=False)
-toolbar.update()
+    tk.Radiobutton(prop_frame, text="Formula (time,date,n,t,UA1,f1) =", value=2).grid(row=1, column=0, sticky='w')
+    formula_entry = tk.Entry(prop_frame)
+    formula_entry.grid(row=1, column=1, padx=5)
 
-canvas.mpl_connect(
-    "key_press_event", lambda event: print(f"you pressed {event.key}"))
-canvas.mpl_connect("key_press_event", key_press_handler)
+    # Checkboxes for different options
+    tk.Checkbutton(prop_frame, text="Derivation over Time from").grid(row=2, column=0, sticky='w')
+    tk.Checkbutton(prop_frame, text="Integral over Time from").grid(row=3, column=0, sticky='w')
+    tk.Checkbutton(prop_frame, text="Mean Value over").grid(row=4, column=0, sticky='w')
+    mean_value_entry = tk.Entry(prop_frame, width=5)
+    mean_value_entry.grid(row=4, column=1, sticky='w', padx=5)
+    tk.Label(prop_frame, text="s from").grid(row=4, column=2, sticky='w')
+    tk.Checkbutton(prop_frame, text="Fast Fourier Transformation from").grid(row=5, column=0, sticky='w')
 
-button_quit = tkinter.Button(master=root, text="Quit", command=root.destroy)
+    # Additional fields (Symbol, Unit, From, To, Decimal Places)
+    tk.Label(prop_frame, text="Symbol:").grid(row=6, column=0, sticky='w')
+    symbol_entry = tk.Entry(prop_frame, width=5)
+    symbol_entry.grid(row=6, column=1, sticky='w', padx=5)
 
+    tk.Label(prop_frame, text="Unit:").grid(row=6, column=2, sticky='w')
+    unit_entry = tk.Entry(prop_frame, width=5)
+    unit_entry.grid(row=6, column=3, sticky='w', padx=5)
 
-def update_frequency(new_val):
-    # retrieve frequency
-    f = float(new_val)
+    tk.Label(prop_frame, text="From:").grid(row=7, column=0, sticky='w')
+    from_entry = tk.Entry(prop_frame, width=5)
+    from_entry.grid(row=7, column=1, sticky='w', padx=5)
 
-    # update data
-    y = 2 * np.sin(2 * np.pi * f * t)
-    line.set_data(t, y)
+    tk.Label(prop_frame, text="To:").grid(row=7, column=2, sticky='w')
+    to_entry = tk.Entry(prop_frame, width=5)
+    to_entry.grid(row=7, column=3, sticky='w', padx=5)
 
-    # required to update canvas and attached toolbar!
-    canvas.draw()
+    tk.Label(prop_frame, text="Decimal Places:").grid(row=8, column=0, sticky='w')
+    decimal_entry = tk.Entry(prop_frame, width=5)
+    decimal_entry.grid(row=8, column=1, sticky='w', padx=5)
 
+    root.mainloop()
 
-slider_update = tkinter.Scale(root, from_=1, to=5, orient=tkinter.HORIZONTAL,
-                              command=update_frequency, label="Frequency [Hz]")
-
-# Packing order is important. Widgets are processed sequentially and if there
-# is no space left, because the window is too small, they are not displayed.
-# The canvas is rather flexible in its size, so we pack it last which makes
-# sure the UI controls are displayed as long as possible.
-button_quit.pack(side=tkinter.BOTTOM)
-slider_update.pack(side=tkinter.BOTTOM)
-toolbar.pack(side=tkinter.BOTTOM, fill=tkinter.X)
-canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=True)
-
-tkinter.mainloop()
+create_gui()
