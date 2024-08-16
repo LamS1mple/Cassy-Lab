@@ -1,26 +1,46 @@
-import tkinter as tk
-from tkinter import ttk
+# Python program to get index of selected 
+# option in Tkinter Combobox 
 
-def update_value(val):
-    voltage_value.set(f"UA1 = {float(val):.2f} V")
+# Import the libraries tkinter 
+from tkinter import *
+from tkinter import ttk 
 
-root = tk.Tk()
-root.title("Voltage Display")
+# Create a GUI app 
+app = Tk() 
 
-# Scale for voltage adjustment
-scale_frame = ttk.Frame(root, padding="10")
-scale_frame.grid(row=0, column=0, sticky=(tk.W, tk.E))
+# Set the geometry of the app 
+app.geometry("600x400") 
 
-scale = tk.Scale(scale_frame, from_=-10, to=10, orient=tk.HORIZONTAL, length=300,
-                 tickinterval=1, resolution=0.01, showvalue=False, command=update_value)
-scale.set(0)
-scale.grid(row=0, column=0)
+# Function to clear the Combobox 
+def clear(): 
+	combo.set('') 
 
-# Label to show the current voltage
-voltage_value = tk.StringVar()
-voltage_value.set("UA1 = 0.00 V")
+# Function to print the index of selected option 
+# in Combobox 
+def get_index(*arg): 
+	Label(app, text="The value at index " + str(combo.current()) +
+		" is" + " " + str(var.get()), font=('Helvetica 12')).pack() 
 
-voltage_label = ttk.Label(scale_frame, textvariable=voltage_value, font=("Arial", 16))
-voltage_label.grid(row=1, column=0, pady=10)
 
-root.mainloop()
+# Define Tuple of months 
+months = ['1', '1', 'March', 'April', 'May', 'June', 
+		'July', 'August', 'September', 'October', 'November', 
+		'December'] 
+
+# Create a Combobox widget 
+var = StringVar() 
+combo = ttk.Combobox(app, textvariable=var) 
+combo['values'] = months 
+combo.pack(padx=5, pady=5) 
+
+# Set the tracing for the given variable 
+var.trace('w', get_index) 
+
+# Create a button to clear the selected combobox 
+# text value 
+button = Button(app, text="Clear", command=clear) 
+button.pack() 
+
+# Make infinite loop for displaying app on 
+# the screen 
+app.mainloop() 

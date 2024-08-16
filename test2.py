@@ -3,60 +3,54 @@ from tkinter import ttk
 
 def create_gui():
     root = tk.Tk()
-    root.title("Quantity Settings")
+    root.title("Display Settings")
 
-    # Select Quantity
-    tk.Label(root, text="Select Quantity:").grid(row=0, column=0, padx=10, pady=5)
-    quantity_combo = ttk.Combobox(root, values=[1, 2, 3, 4, 5])
-    quantity_combo.grid(row=0, column=1, padx=10, pady=5)
-    quantity_combo.current(1)
+    # Select Display
+    tk.Label(root, text="Select Display:").grid(row=0, column=0, padx=10, pady=5)
+    display_combo = ttk.Combobox(root, values=["New Display", "Display 1", "Display 2"])
+    display_combo.grid(row=0, column=1, padx=10, pady=5)
+    display_combo.current(0)
 
-    # Buttons for New Quantity and Delete Quantity
-    tk.Button(root, text="New Quantity").grid(row=0, column=2, padx=10, pady=5)
-    tk.Button(root, text="Delete Quantity").grid(row=0, column=3, padx=10, pady=5)
+    # Buttons for New Display and Clear Display
+    tk.Button(root, text="New Display").grid(row=0, column=2, padx=10, pady=5)
+    tk.Button(root, text="Clear Display").grid(row=0, column=3, padx=10, pady=5)
 
-    # Properties frame
-    prop_frame = tk.LabelFrame(root, text="Properties", padx=10, pady=10)
-    prop_frame.grid(row=1, column=0, columnspan=4, padx=10, pady=10, sticky="ew")
+    # X-Axis and Y-Axis
+    tk.Label(root, text="X-Axis:").grid(row=1, column=0, padx=10, pady=5, sticky='w')
+    x_axis_combo = ttk.Combobox(root, values=["f1", "f2", "f3"])
+    x_axis_combo.grid(row=1, column=1, padx=10, pady=5)
+    x_axis_combo.current(0)
 
-    # Parameter or Formula
-    tk.Radiobutton(prop_frame, text="Parameter (Manual Entry in Table or Here) =", value=1).grid(row=0, column=0, sticky='w')
-    param_entry = tk.Entry(prop_frame)
-    param_entry.grid(row=0, column=1, padx=5)
+    tk.Label(root, text="Y-Axes:").grid(row=1, column=2, padx=10, pady=5, sticky='w')
+    y_axis_combo = ttk.Combobox(root, values=["f1", "f2", "f3", "Off"])
+    y_axis_combo.grid(row=1, column=3, padx=10, pady=5)
+    y_axis_combo.current(1)
 
-    tk.Radiobutton(prop_frame, text="Formula (time,date,n,t,UA1,f1) =", value=2).grid(row=1, column=0, sticky='w')
-    formula_entry = tk.Entry(prop_frame)
-    formula_entry.grid(row=1, column=1, padx=5)
+    # X-Axis Transformation Options
+    x_frame = tk.LabelFrame(root, text="X-Axis Transformation")
+    x_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky='ew')
+    
+    x_var = tk.StringVar(value="x")
+    tk.Radiobutton(x_frame, text="x", variable=x_var, value="x").grid(row=0, column=0, sticky='w')
+    tk.Radiobutton(x_frame, text="x²", variable=x_var, value="x²").grid(row=1, column=0, sticky='w')
+    tk.Radiobutton(x_frame, text="1/x", variable=x_var, value="1/x").grid(row=2, column=0, sticky='w')
+    tk.Radiobutton(x_frame, text="1/x²", variable=x_var, value="1/x²").grid(row=3, column=0, sticky='w')
+    tk.Radiobutton(x_frame, text="log x", variable=x_var, value="log x").grid(row=4, column=0, sticky='w')
 
-    # Checkboxes for different options
-    tk.Checkbutton(prop_frame, text="Derivation over Time from").grid(row=2, column=0, sticky='w')
-    tk.Checkbutton(prop_frame, text="Integral over Time from").grid(row=3, column=0, sticky='w')
-    tk.Checkbutton(prop_frame, text="Mean Value over").grid(row=4, column=0, sticky='w')
-    mean_value_entry = tk.Entry(prop_frame, width=5)
-    mean_value_entry.grid(row=4, column=1, sticky='w', padx=5)
-    tk.Label(prop_frame, text="s from").grid(row=4, column=2, sticky='w')
-    tk.Checkbutton(prop_frame, text="Fast Fourier Transformation from").grid(row=5, column=0, sticky='w')
+    # Y-Axis Transformation Options
+    y_frame = tk.LabelFrame(root, text="Y-Axis Transformation")
+    y_frame.grid(row=2, column=2, columnspan=2, padx=10, pady=10, sticky='ew')
+    
+    y_var = tk.StringVar(value="y")
+    tk.Radiobutton(y_frame, text="y", variable=y_var, value="y").grid(row=0, column=0, sticky='w')
+    tk.Radiobutton(y_frame, text="y²", variable=y_var, value="y²").grid(row=1, column=0, sticky='w')
+    tk.Radiobutton(y_frame, text="1/y", variable=y_var, value="1/y").grid(row=2, column=0, sticky='w')
+    tk.Radiobutton(y_frame, text="1/y²", variable=y_var, value="1/y²").grid(row=3, column=0, sticky='w')
+    tk.Radiobutton(y_frame, text="log y", variable=y_var, value="log y").grid(row=4, column=0, sticky='w')
 
-    # Additional fields (Symbol, Unit, From, To, Decimal Places)
-    tk.Label(prop_frame, text="Symbol:").grid(row=6, column=0, sticky='w')
-    symbol_entry = tk.Entry(prop_frame, width=5)
-    symbol_entry.grid(row=6, column=1, sticky='w', padx=5)
-
-    tk.Label(prop_frame, text="Unit:").grid(row=6, column=2, sticky='w')
-    unit_entry = tk.Entry(prop_frame, width=5)
-    unit_entry.grid(row=6, column=3, sticky='w', padx=5)
-
-    tk.Label(prop_frame, text="From:").grid(row=7, column=0, sticky='w')
-    from_entry = tk.Entry(prop_frame, width=5)
-    from_entry.grid(row=7, column=1, sticky='w', padx=5)
-
-    tk.Label(prop_frame, text="To:").grid(row=7, column=2, sticky='w')
-    to_entry = tk.Entry(prop_frame, width=5)
-    to_entry.grid(row=7, column=3, sticky='w', padx=5)
-
-    tk.Label(prop_frame, text="Decimal Places:").grid(row=8, column=0, sticky='w')
-    decimal_entry = tk.Entry(prop_frame, width=5)
-    decimal_entry.grid(row=8, column=1, sticky='w', padx=5)
+    # Additional Options (Polar, Bars)
+    tk.Checkbutton(root, text="Polar").grid(row=3, column=0, padx=10, pady=5, sticky='w')
+    tk.Checkbutton(root, text="Bars").grid(row=3, column=2, padx=10, pady=5, sticky='w')
 
     root.mainloop()
 

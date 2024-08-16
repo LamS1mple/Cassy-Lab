@@ -6,6 +6,7 @@ import logging
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import asyncio
+import FFTObject
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -26,6 +27,14 @@ showU2Box = None
 measuringParametesWindow = None
 
 window.title("Geeeks For Geeks")
+
+# global variable
+increase = 1
+U1 = None
+U2 = None
+listFFT = []
+indexNameFFT = -2
+formulaEntry = tk.StringVar()
 
 def start_resize(event):
     global drag_data
@@ -172,7 +181,7 @@ def show_u1_box():
 
 
 
-def show_u1(event):
+def click_u1(event):
     label1.config(text="U1")
     show_u1_box()
 
@@ -249,7 +258,8 @@ def show_u2_box():
         ttk.Button(button_frame, text="Close", command=close_action).grid(row=0, column=3, sticky=tk.W)
 
 
-def show_u2(event):
+def click_u2(event):
+    
     label2.config(text="U2")
     show_u2_box()
 
@@ -265,13 +275,149 @@ def defCassy(frameMain):
     label2.grid(row=1, column=0)
 
     # Gắn sự kiện click vào label
-    label1.bind("<Button-1>", show_u1)
-    label2.bind("<Button-1>", show_u2)
+    label1.bind("<Button-1>", click_u1)
+    label2.bind("<Button-1>", click_u2)
 
 
     print(1)
+
+
 def defFFT(frameMain):
-    print(2)
+    def seletedQuantityFFT(*arg):
+        global indexNameFFT
+     
+        if  indexNameFFT == -2 or indexNameFFT >= 0 :
+
+            if quantity_combo.current() >= 0:
+                indexNameFFT = quantity_combo.current()
+        displayFFT()
+
+    def getIndexNameFFT(*arg):
+        global indexNameFFT
+     
+        if  indexNameFFT == -2 or indexNameFFT >= 0 :
+
+            if quantity_combo.current() >= 0:
+                indexNameFFT = quantity_combo.current()
+            listFFT[indexNameFFT].name = nameFFTSelected.get()
+            changeValueCombobox()
+            print(indexNameFFT)
+            
+
+        
+    def changeValueCombobox():
+        global indexNameFFT
+        listNameQuatity = []
+        for i in range(len(listFFT)):
+            listNameQuatity.append(listFFT[i].name)
+        if len(listNameQuatity) > 0 :
+            quantity_combo['values'] = listNameQuatity
+            quantity_combo['state'] = 'normal'
+            
+        else:
+            quantity_combo['state'] = 'readonly'
+            quantity_combo['values'] = []
+            indexNameFFT = -2
+            nameFFTSelected.set('')
+        
+    def displayFFT():
+        for widget in frameFFT.winfo_children():
+            if isinstance(widget, tk.LabelFrame) and widget.cget("text") == "Properties":
+                widget.destroy()
+        prop_frame = tk.LabelFrame(frameFFT, text="Properties", padx=10, pady=10)
+       
+        if len(listFFT) > 0:
+            quantity_combo.current(indexNameFFT)
+            # Properties frame
+            prop_frame.grid(row=1, column=0, columnspan=4, padx=10, pady=10, sticky="ew")
+
+            # Parameter or Formula
+            tk.Radiobutton(prop_frame, text="Parameter (Manual Entry in Table or Here) =", value=1).grid(row=0, column=0, sticky='w')
+            param_entry = tk.Entry(prop_frame)
+            param_entry.grid(row=0, column=1, padx=5)
+
+            tk.Radiobutton(prop_frame, text="Formula (time,date,n,t,UA1,f1) =", value=2).grid(row=1, column=0, sticky='w')
+            formula_entry = tk.Entry(prop_frame, textvariable=formulaEntry)
+            formula_entry.grid(row=1, column=1, padx=5)
+
+            formulaEntry.set(listFFT[indexNameFFT].formula)
+
+            # Checkboxes for different options
+            tk.Checkbutton(prop_frame, text="Derivation over Time from").grid(row=2, column=0, sticky='w')
+            tk.Checkbutton(prop_frame, text="Integral over Time from").grid(row=3, column=0, sticky='w')
+            tk.Checkbutton(prop_frame, text="Mean Value over").grid(row=4, column=0, sticky='w')
+            mean_value_entry = tk.Entry(prop_frame, width=5)
+            mean_value_entry.grid(row=4, column=1, sticky='w', padx=5)
+            tk.Label(prop_frame, text="s from").grid(row=4, column=2, sticky='w')
+            tk.Checkbutton(prop_frame, text="Fast Fourier Transformation from").grid(row=5, column=0, sticky='w')
+
+            # Additional fields (Symbol, Unit, From, To, Decimal Places)
+            tk.Label(prop_frame, text="Symbol:").grid(row=6, column=0, sticky='w')
+            symbol_entry = tk.Entry(prop_frame, width=5)
+            symbol_entry.grid(row=6, column=1, sticky='w', padx=5)
+
+            tk.Label(prop_frame, text="Unit:").grid(row=6, column=2, sticky='w')
+            unit_entry = tk.Entry(prop_frame, width=5)
+            unit_entry.grid(row=6, column=3, sticky='w', padx=5)
+
+            tk.Label(prop_frame, text="From:").grid(row=7, column=0, sticky='w')
+            from_entry = tk.Entry(prop_frame, width=5)
+            from_entry.grid(row=7, column=1, sticky='w', padx=5)
+
+            tk.Label(prop_frame, text="To:").grid(row=7, column=2, sticky='w')
+            to_entry = tk.Entry(prop_frame, width=5)
+            to_entry.grid(row=7, column=3, sticky='w', padx=5)
+
+            tk.Label(prop_frame, text="Decimal Places:").grid(row=8, column=0, sticky='w')
+            decimal_entry = tk.Entry(prop_frame, width=5)
+            decimal_entry.grid(row=8, column=1, sticky='w', padx=5)
+        else:
+            prop_frame.destroy()
+    def newFFT():
+        global indexNameFFT
+        global increase
+        fft =  FFTObject.FFT(increase)
+        listFFT.append(fft)
+        changeValueCombobox()
+        increase += 1
+        print(indexNameFFT)
+        indexNameFFT = len(listFFT) - 1
+        quantity_combo.current(indexNameFFT)
+        displayFFT()
+    def deleteQuantity():
+        global indexNameFFT
+        if len(listFFT) > 0:
+            listFFT.pop(indexNameFFT)
+            indexNameFFT = len(listFFT) - 1
+            changeValueCombobox()
+        displayFFT()
+            
+            
+            
+        
+            
+     
+
+        
+
+    frameFFT = ttk.Frame(frameMain, borderwidth=5, relief="sunken", padding="10")
+    frameFFT.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5, pady=5)
+
+    # Select Quantity
+    tk.Label(frameFFT, text="Select Quantity:").grid(row=0, column=0, padx=10, pady=5)
+    nameFFTSelected = tk.StringVar()
+    quantity_combo = ttk.Combobox(frameFFT, textvariable= nameFFTSelected)
+    quantity_combo.grid(row=0, column=1, padx=10, pady=5)
+    quantity_combo.bind('<<ComboboxSelected>>', seletedQuantityFFT)
+    nameFFTSelected.trace('w', getIndexNameFFT)
+
+    # Buttons for New Quantity and Delete Quantity
+    tk.Button(frameFFT, text="New Quantity", command=lambda: newFFT()).grid(row=0, column=2, padx=10, pady=5)
+    tk.Button(frameFFT, text="Delete Quantity", command=deleteQuantity).grid(row=0, column=3, padx=10, pady=5)
+    changeValueCombobox()
+    displayFFT()
+    
+    
 def defCommnet(frameMain):
     print(3)
 def defGeneral(frameMain):
@@ -303,11 +449,69 @@ def defGeneral(frameMain):
 
         question_menu.grid(row=i, column=1, columnspan=3, padx=5, pady=10)
 
+def defDisplay(frameMain):
+    frameDisplay = ttk.Frame(frameMain, borderwidth=5, relief="sunken", padding="10")
+    frameDisplay.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5, pady=5)
+
+    # Select Display
+    tk.Label(frameDisplay, text="Select Display:").grid(row=0, column=0, padx=10, pady=5)
+    display_combo = ttk.Combobox(frameDisplay, values=["New Display", "Display 1", "Display 2"])
+    display_combo.grid(row=0, column=1, padx=10, pady=5)
+    display_combo.current(0)
+
+    # Buttons for New Display and Clear Display
+    tk.Button(frameDisplay, text="New Display").grid(row=0, column=2, padx=10, pady=5)
+    tk.Button(frameDisplay, text="Clear Display").grid(row=0, column=3, padx=10, pady=5)
+
+    # X-Axis and Y-Axis
+    tk.Label(frameDisplay, text="X-Axis:").grid(row=1, column=0, padx=10, pady=5, sticky='w')
+    x_axis_combo = ttk.Combobox(frameDisplay, values=["f1", "f2", "f3"])
+    x_axis_combo.grid(row=1, column=1, padx=10, pady=5)
+    x_axis_combo.current(0)
+
+    tk.Label(frameDisplay, text="Y-Axes:").grid(row=1, column=2, padx=10, pady=5, sticky='w')
+    y_axis_combo = ttk.Combobox(frameDisplay, values=["f1", "f2", "f3", "Off"])
+    y_axis_combo.grid(row=1, column=3, padx=10, pady=5)
+    y_axis_combo.current(1)
+
+    # X-Axis Transformation Options
+    x_frame = tk.LabelFrame(frameDisplay, text="X-Axis Transformation")
+    x_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky='ew')
+    
+    x_var = tk.IntVar()
+    x_var.set(1)
+    tk.Radiobutton(x_frame, text="x", variable=x_var, value=1).grid(row=0, column=0, sticky='w')
+    tk.Radiobutton(x_frame, text="x²", variable=x_var, value=2).grid(row=1, column=0, sticky='w')
+    tk.Radiobutton(x_frame, text="1/x", variable=x_var, value=3).grid(row=2, column=0, sticky='w')
+    tk.Radiobutton(x_frame, text="1/x²", variable=x_var, value=4).grid(row=3, column=0, sticky='w')
+    tk.Radiobutton(x_frame, text="log x", variable=x_var, value=5).grid(row=4, column=0, sticky='w')
+    
+    # Y-Axis Transformation Options
+    y_frame = tk.LabelFrame(frameDisplay, text="Y-Axis Transformation")
+    y_frame.grid(row=2, column=2, columnspan=2, padx=10, pady=10, sticky='ew')
+    
+    y_var = tk.StringVar(value="y")
+    tk.Radiobutton(y_frame, text="y", variable=y_var, value="y").grid(row=0, column=0, sticky='w')
+    tk.Radiobutton(y_frame, text="y²", variable=y_var, value="y²").grid(row=1, column=0, sticky='w')
+    tk.Radiobutton(y_frame, text="1/y", variable=y_var, value="1/y").grid(row=2, column=0, sticky='w')
+    tk.Radiobutton(y_frame, text="1/y²", variable=y_var, value="1/y²").grid(row=3, column=0, sticky='w')
+    tk.Radiobutton(y_frame, text="log y", variable=y_var, value="log y").grid(row=4, column=0, sticky='w')
+
+    # Additional Options (Polar, Bars)
+    tk.Checkbutton(frameDisplay, text="Polar").grid(row=3, column=0, padx=10, pady=5, sticky='w')
+    tk.Checkbutton(frameDisplay, text="Bars").grid(row=3, column=2, padx=10, pady=5, sticky='w')
+
+
+def deleteWidget(windowFrame):
+    for widget in windowFrame.winfo_children():
+        if isinstance(widget, tk.LabelFrame) and widget.cget("text") == "Properties":
+            widget.destroy()
 
 
 # giao dien auto hay bam tay
 def measuringParametes():
     global measuringParametesWindow
+    
     if measuringParametesWindow is None or not measuringParametesWindow.winfo_exists():
         measuringParametesWindow = tk.Toplevel(window)
         measuringParametesWindow.attributes("-topmost", True)
@@ -370,6 +574,7 @@ def measuringParametes():
 
 def openWindowF5(event=None):
     global windowF5
+    global main_frame
     if windowF5 is None or not windowF5.winfo_exists():
         windowF5 = tk.Toplevel(window)
         
@@ -382,7 +587,7 @@ def openWindowF5(event=None):
         frame1 = ttk.Frame(main_frame, borderwidth=5, relief="sunken")
         frame1.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5, pady=5)
 
-        button_texts1 = ["CASSY", "Parameter/Formula/FFT`", "Comment", "General"]
+        button_texts1 = ["CASSY", "Parameter/Formula/FFT`", "Comment", "General", "Display"]
         
         # button cassy
         buttonCassy = ttk.Button(frame1, text=button_texts1[0], comman = lambda: defCassy(main_frame) )
@@ -395,6 +600,9 @@ def openWindowF5(event=None):
         buttonCassy.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=2)
         # button General
         buttonCassy = ttk.Button(frame1, text=button_texts1[3], comman = lambda: defGeneral(main_frame))
+        buttonCassy.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=2)
+        # Button Display
+        buttonCassy = ttk.Button(frame1, text=button_texts1[4], comman = lambda: defDisplay(main_frame))
         buttonCassy.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=2)
 
 
@@ -427,7 +635,12 @@ def openWindowF5(event=None):
         main_frame.rowconfigure(1, weight=1)
         main_frame.rowconfigure(2, weight=1)
 
+def enterFormula(*arg):
+    listFFT[indexNameFFT].formula = formulaEntry.get()
+
+
 window.bind('<F5>', openWindowF5)
+formulaEntry.trace('w', enterFormula)
 
 openWindowF5()
 
