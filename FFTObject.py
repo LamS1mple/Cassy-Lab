@@ -8,4 +8,4 @@ class FFT:
        self.formula = ""
        self.symbol = "f{}".format(i)
        self.util = ""
-       self.decimalPlaces = 5
+       self.decimalPlaces = 3

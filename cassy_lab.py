@@ -32,9 +32,14 @@ window.title("Geeeks For Geeks")
 increase = 1
 U1 = None
 U2 = None
+time = 0
+n = 0
 listFFT = []
 indexNameFFT = -2
 formulaEntry = tk.StringVar()
+symolFFT = tk.StringVar()
+unitFFT = tk.StringVar()
+decimalPlacesFFT = tk.IntVar()
 
 def start_resize(event):
     global drag_data
@@ -182,6 +187,8 @@ def show_u1_box():
 
 
 def click_u1(event):
+    global U1
+    U1 = 0
     label1.config(text="U1")
     show_u1_box()
 
@@ -259,7 +266,8 @@ def show_u2_box():
 
 
 def click_u2(event):
-    
+    global U2
+    U2 = 0
     label2.config(text="U2")
     show_u2_box()
 
@@ -273,6 +281,10 @@ def defCassy(frameMain):
 
     label2 = tk.Label(frameCassy, text="Click here for U2", bg="lightgreen", width=20, height=5)
     label2.grid(row=1, column=0)
+    if U1 is not None:
+        label1.config(text="U1")
+    if U2 is not None:
+        label2.config(text="U2")
 
     # Gắn sự kiện click vào label
     label1.bind("<Button-1>", click_u1)
@@ -353,11 +365,11 @@ def defFFT(frameMain):
 
             # Additional fields (Symbol, Unit, From, To, Decimal Places)
             tk.Label(prop_frame, text="Symbol:").grid(row=6, column=0, sticky='w')
-            symbol_entry = tk.Entry(prop_frame, width=5)
+            symbol_entry = tk.Entry(prop_frame, width=5, textvariable=symolFFT)
             symbol_entry.grid(row=6, column=1, sticky='w', padx=5)
 
             tk.Label(prop_frame, text="Unit:").grid(row=6, column=2, sticky='w')
-            unit_entry = tk.Entry(prop_frame, width=5)
+            unit_entry = tk.Entry(prop_frame, width=5, textvariable=unitFFT)
             unit_entry.grid(row=6, column=3, sticky='w', padx=5)
 
             tk.Label(prop_frame, text="From:").grid(row=7, column=0, sticky='w')
@@ -369,8 +381,13 @@ def defFFT(frameMain):
             to_entry.grid(row=7, column=3, sticky='w', padx=5)
 
             tk.Label(prop_frame, text="Decimal Places:").grid(row=8, column=0, sticky='w')
-            decimal_entry = tk.Entry(prop_frame, width=5)
+            decimal_entry = tk.Entry(prop_frame, width=5 , textvariable = decimalPlacesFFT)
             decimal_entry.grid(row=8, column=1, sticky='w', padx=5)
+            # set value
+            symolFFT.set(listFFT[indexNameFFT].symbol)
+            unitFFT.set(listFFT[indexNameFFT].util)
+            decimalPlacesFFT.set(listFFT[indexNameFFT].decimalPlaces)
+
         else:
             prop_frame.destroy()
     def newFFT():
@@ -450,12 +467,25 @@ def defGeneral(frameMain):
         question_menu.grid(row=i, column=1, columnspan=3, padx=5, pady=10)
 
 def defDisplay(frameMain):
+    def changeValueComboboxDisplay():
+        global indexNameFFT
+        listNameQuatity = []
+        listNameQuatity.append("t")
+        listNameQuatity.append("n")
+
+        if U1  is not None:
+            listNameQuatity.append("U1")
+        if U2 is not None:
+            listNameQuatity.append("U2")
+        for i in range(len(listFFT)):
+            listNameQuatity.append(listFFT[i].symbol)
+        return listNameQuatity
     frameDisplay = ttk.Frame(frameMain, borderwidth=5, relief="sunken", padding="10")
     frameDisplay.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5, pady=5)
 
     # Select Display
     tk.Label(frameDisplay, text="Select Display:").grid(row=0, column=0, padx=10, pady=5)
-    display_combo = ttk.Combobox(frameDisplay, values=["New Display", "Display 1", "Display 2"])
+    display_combo = ttk.Combobox(frameDisplay, values = ["New"])
     display_combo.grid(row=0, column=1, padx=10, pady=5)
     display_combo.current(0)
 
@@ -465,12 +495,12 @@ def defDisplay(frameMain):
 
     # X-Axis and Y-Axis
     tk.Label(frameDisplay, text="X-Axis:").grid(row=1, column=0, padx=10, pady=5, sticky='w')
-    x_axis_combo = ttk.Combobox(frameDisplay, values=["f1", "f2", "f3"])
+    x_axis_combo = ttk.Combobox(frameDisplay, values = changeValueComboboxDisplay())
     x_axis_combo.grid(row=1, column=1, padx=10, pady=5)
     x_axis_combo.current(0)
 
     tk.Label(frameDisplay, text="Y-Axes:").grid(row=1, column=2, padx=10, pady=5, sticky='w')
-    y_axis_combo = ttk.Combobox(frameDisplay, values=["f1", "f2", "f3", "Off"])
+    y_axis_combo = ttk.Combobox(frameDisplay, values=changeValueComboboxDisplay())
     y_axis_combo.grid(row=1, column=3, padx=10, pady=5)
     y_axis_combo.current(1)
 
@@ -479,24 +509,24 @@ def defDisplay(frameMain):
     x_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky='ew')
     
     x_var = tk.IntVar()
-    x_var.set(1)
+    
     tk.Radiobutton(x_frame, text="x", variable=x_var, value=1).grid(row=0, column=0, sticky='w')
     tk.Radiobutton(x_frame, text="x²", variable=x_var, value=2).grid(row=1, column=0, sticky='w')
     tk.Radiobutton(x_frame, text="1/x", variable=x_var, value=3).grid(row=2, column=0, sticky='w')
     tk.Radiobutton(x_frame, text="1/x²", variable=x_var, value=4).grid(row=3, column=0, sticky='w')
     tk.Radiobutton(x_frame, text="log x", variable=x_var, value=5).grid(row=4, column=0, sticky='w')
-    
+    x_var.set(1)
     # Y-Axis Transformation Options
     y_frame = tk.LabelFrame(frameDisplay, text="Y-Axis Transformation")
     y_frame.grid(row=2, column=2, columnspan=2, padx=10, pady=10, sticky='ew')
     
-    y_var = tk.StringVar(value="y")
-    tk.Radiobutton(y_frame, text="y", variable=y_var, value="y").grid(row=0, column=0, sticky='w')
-    tk.Radiobutton(y_frame, text="y²", variable=y_var, value="y²").grid(row=1, column=0, sticky='w')
-    tk.Radiobutton(y_frame, text="1/y", variable=y_var, value="1/y").grid(row=2, column=0, sticky='w')
-    tk.Radiobutton(y_frame, text="1/y²", variable=y_var, value="1/y²").grid(row=3, column=0, sticky='w')
-    tk.Radiobutton(y_frame, text="log y", variable=y_var, value="log y").grid(row=4, column=0, sticky='w')
-
+    y_var = tk.IntVar()
+    tk.Radiobutton(y_frame, text="y", variable=y_var, value=1).grid(row=0, column=0, sticky='w')
+    tk.Radiobutton(y_frame, text="y²", variable=y_var, value=2).grid(row=1, column=0, sticky='w')
+    tk.Radiobutton(y_frame, text="1/y", variable=y_var, value=3).grid(row=2, column=0, sticky='w')
+    tk.Radiobutton(y_frame, text="1/y²", variable=y_var, value=4).grid(row=3, column=0, sticky='w')
+    tk.Radiobutton(y_frame, text="log y", variable=y_var, value=5).grid(row=4, column=0, sticky='w')
+    y_var.set(1)
     # Additional Options (Polar, Bars)
     tk.Checkbutton(frameDisplay, text="Polar").grid(row=3, column=0, padx=10, pady=5, sticky='w')
     tk.Checkbutton(frameDisplay, text="Bars").grid(row=3, column=2, padx=10, pady=5, sticky='w')
@@ -638,9 +668,18 @@ def openWindowF5(event=None):
 def enterFormula(*arg):
     listFFT[indexNameFFT].formula = formulaEntry.get()
 
+def enterSymolFFT (*arg):
+    listFFT[indexNameFFT].symbol = symolFFT.get()
+def enterUnitFFT (*arg):
+    listFFT[indexNameFFT].util = unitFFT.get()
+def enterDecimalPlaceFFT (*arg):
+    listFFT[indexNameFFT].decimalPlaces = decimalPlacesFFT.get()
 
 window.bind('<F5>', openWindowF5)
 formulaEntry.trace('w', enterFormula)
+symolFFT.trace('w', enterSymolFFT)
+unitFFT.trace('w', enterUnitFFT)
+decimalPlacesFFT.trace('w', enterDecimalPlaceFFT)
 
 openWindowF5()
 

@@ -1,46 +1,16 @@
-# Python program to get index of selected 
-# option in Tkinter Combobox 
-
-# Import the libraries tkinter 
-from tkinter import *
-from tkinter import ttk 
-
-# Create a GUI app 
-app = Tk() 
-
-# Set the geometry of the app 
-app.geometry("600x400") 
-
-# Function to clear the Combobox 
-def clear(): 
-	combo.set('') 
-
-# Function to print the index of selected option 
-# in Combobox 
-def get_index(*arg): 
-	Label(app, text="The value at index " + str(combo.current()) +
-		" is" + " " + str(var.get()), font=('Helvetica 12')).pack() 
+import serial
 
 
-# Define Tuple of months 
-months = ['1', '1', 'March', 'April', 'May', 'June', 
-		'July', 'August', 'September', 'October', 'November', 
-		'December'] 
+def readserial(comport, baudrate):
 
-# Create a Combobox widget 
-var = StringVar() 
-combo = ttk.Combobox(app, textvariable=var) 
-combo['values'] = months 
-combo.pack(padx=5, pady=5) 
+    ser = serial.Serial(comport, baudrate, timeout=0.1)         # 1/timeout is the frequency at which the port is read
 
-# Set the tracing for the given variable 
-var.trace('w', get_index) 
+    while True:
+        data = ser.readline().decode().strip()
+        if data:
+            print(data)
 
-# Create a button to clear the selected combobox 
-# text value 
-button = Button(app, text="Clear", command=clear) 
-button.pack() 
 
-# Make infinite loop for displaying app on 
-# the screen 
-app.mainloop() 
+if __name__ == '__main__':
+
+    readserial('COM7', 9600)
