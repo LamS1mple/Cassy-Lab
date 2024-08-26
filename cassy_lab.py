@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+import numpy as np
 import serial.tools.list_ports
 import scan_com
 import logging
@@ -7,6 +8,9 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import asyncio
 import FFTObject
+import threading
+import time as TIME
+import queue
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -19,27 +23,96 @@ height= window.winfo_screenheight()
 window.state('zoomed')
 # data radio
 recording_mode = tk.IntVar(window)
-
+recording_mode.set(1)
 # window
 windowF5 = None
 showU1Box = None
 showU2Box = None
 measuringParametesWindow = None
-
+timeStart = 0
 window.title("Geeeks For Geeks")
 
+xData = []
+yData = []
 # global variable
+xAxis = None
+yAxis = None
 increase = 1
 U1 = None
 U2 = None
 time = 0
 n = 0
+listDisplayValue = []
 listFFT = []
 indexNameFFT = -2
 formulaEntry = tk.StringVar()
 symolFFT = tk.StringVar()
 unitFFT = tk.StringVar()
 decimalPlacesFFT = tk.IntVar()
+measInter = tk.IntVar()
+measTime = tk.IntVar()
+
+def displayColumn():
+    global tableView
+    nameTable = ['t(s)']
+
+    for i in range(len(listDisplayValue)):
+        nameTable.append("{}".format(listDisplayValue[i].symbol))
+
+    tableView['columns'] = nameTable
+    tableView.heading(nameTable[0] , text = nameTable[0])
+    tableView.column("t(s)", width=100)
+    for i in range(1,len( nameTable)):
+        tableView.column(nameTable[i], width=100)
+        tableView.heading(nameTable[i], text= "{}({})".format(nameTable[i] ,  listDisplayValue[i - 1].util))
+        
+
+
+
+def changeDisplayValue():
+    global listDisplayValue
+    listDisplayValue = []
+    if U1 is not None:
+        oU1 =  FFTObject.FFT(0)
+        oU1.name = "U1"
+        oU1.formula = "U1"
+        oU1.symbol = "U1"
+        oU1.util = "V"
+        oU1.decimalPlaces = 3
+        listDisplayValue.append(oU1)
+    if U2 is not None:
+        oU2 =  FFTObject.FFT(0)
+        oU2.name = "U2"
+        oU2.formula = "U2"
+        oU2.symbol = "U2"
+        oU2.util = "V"
+        oU2.decimalPlaces = 3
+        listDisplayValue.append(oU2)
+    listDisplayValue += listFFT
+    displayColumn()
+
+
+
+def readData():
+    global dataText, U1, U2
+    while True:
+        l = len(listDisplayValue)
+       
+        data = arduino.readline().decode().strip()
+        if data:
+            print(data)
+            dataText = data.split("|")
+            if U1 is not None:
+                U1 = float(dataText[0])
+            if U2 is not None:
+                U2 = float(dataText[1])
+            for i in range(len(listDisplayValue)):
+                value = eval(listDisplayValue[i].formula)
+                listDisplayValue[i].resetValue(value)
+        
+                
+
+threadingData = threading.Thread(target=readData)
 
 def start_resize(event):
     global drag_data
@@ -61,9 +134,17 @@ def perform_resize(event):
         frame.config(width=new_width)
         drag_data = {"x": event.x, "y": event.y}
 
+def updateMatplotlib():
+    global plt
+
+    plt.plot(np.array(xData), np.array(yData) , marker="o")
+    canvas.draw()
+    pass
+
 def matplotlib():
+    global tableView
     # Tạo một khung để chứa canvas và thanh công cụ
-    frameTreeView = tk.Frame(window,width=100,padx=20)
+    frameTreeView = tk.Frame(window,width=300,padx=20)
     frameTreeView.pack_propagate(False)  # Đảm bảo kích thước của Frame không thay đổi theo nội dung
     frameTreeView.pack(side=tk.LEFT, fill=tk.Y)
     tableView = ttk.Treeview(frameTreeView, show='headings')
@@ -75,16 +156,23 @@ def matplotlib():
     tableView.configure(yscroll=scrollbar.set)
     scrollbar.pack(side=tk.LEFT, fill=tk.Y)
 
+    scrollbar_x = ttk.Scrollbar(frameTreeView, orient=tk.HORIZONTAL, command=tableView.xview)
+    scrollbar_x.pack(side=tk.BOTTOM, fill=tk.X)
+    tableView.configure(xscrollcommand=scrollbar_x.set)
     
     # Tạo một figure cho matplotlib
+   
+
     fig, ax = plt.subplots()
     plt.gca().spines['top'].set_visible(False)
     plt.gca().spines['right'].set_visible(False)
+   
+
     # Vẽ các đường lưới (grid lines) và thiết lập giới hạn trục
     ax.grid(True)
     ax.set_xlim(0, 10)
     ax.set_ylim(0, 100)
-
+    global canvas
     # Tạo canvas để hiển thị biểu đồ trong cửa sổ Tkinter
     canvas = FigureCanvasTkAgg(fig, master=window)
     canvas.draw()
@@ -102,6 +190,8 @@ def changeValueOptionMenu(data , value):
             arduino = serial.Serial(port='{}'.format(scan_com.nameCom[data]), baudrate=9600)
             print("Ket not thanh cong")
             matplotlib()
+            threadingData.start()
+
             
 
     except NameError:
@@ -188,10 +278,11 @@ def show_u1_box():
 
 def click_u1(event):
     global U1
-    U1 = 0
+    U1 = float(dataText[0])
     label1.config(text="U1")
     show_u1_box()
-
+    changeDisplayValue()
+    listDisplayValue[0].createDisplay(window)
 def show_u2_box():
    
 
@@ -267,9 +358,15 @@ def show_u2_box():
 
 def click_u2(event):
     global U2
-    U2 = 0
+    U2 = float(dataText[1])
     label2.config(text="U2")
     show_u2_box()
+    changeDisplayValue()
+    if U1 is not None:
+        listDisplayValue[1].createDisplay(window)
+    else:
+        listDisplayValue[0].createDisplay(window)
+
 
 def defCassy(frameMain):
     global label1
@@ -348,7 +445,7 @@ def defFFT(frameMain):
             param_entry = tk.Entry(prop_frame)
             param_entry.grid(row=0, column=1, padx=5)
 
-            tk.Radiobutton(prop_frame, text="Formula (time,date,n,t,UA1,f1) =", value=2).grid(row=1, column=0, sticky='w')
+            tk.Radiobutton(prop_frame, text="Formula (time,date,n,t,U1,U2) =", value=2).grid(row=1, column=0, sticky='w')
             formula_entry = tk.Entry(prop_frame, textvariable=formulaEntry)
             formula_entry.grid(row=1, column=1, padx=5)
 
@@ -401,6 +498,7 @@ def defFFT(frameMain):
         indexNameFFT = len(listFFT) - 1
         quantity_combo.current(indexNameFFT)
         displayFFT()
+        changeDisplayValue()
     def deleteQuantity():
         global indexNameFFT
         if len(listFFT) > 0:
@@ -408,6 +506,7 @@ def defFFT(frameMain):
             indexNameFFT = len(listFFT) - 1
             changeValueCombobox()
         displayFFT()
+        changeDisplayValue()
             
             
             
@@ -492,17 +591,21 @@ def defDisplay(frameMain):
     # Buttons for New Display and Clear Display
     tk.Button(frameDisplay, text="New Display").grid(row=0, column=2, padx=10, pady=5)
     tk.Button(frameDisplay, text="Clear Display").grid(row=0, column=3, padx=10, pady=5)
-
+    global xAxis, yAxis
     # X-Axis and Y-Axis
+    xAxis = tk.StringVar()
+    yAxis = tk.StringVar()
+    xAxis.set("t")
+    yAxis.set("n")
     tk.Label(frameDisplay, text="X-Axis:").grid(row=1, column=0, padx=10, pady=5, sticky='w')
-    x_axis_combo = ttk.Combobox(frameDisplay, values = changeValueComboboxDisplay())
-    x_axis_combo.grid(row=1, column=1, padx=10, pady=5)
-    x_axis_combo.current(0)
+    x = ttk.Combobox(frameDisplay, values = changeValueComboboxDisplay(),textvariable=xAxis , state='readonly')
+    x.grid(row=1, column=1, padx=10, pady=5)
+    x.current(0)
 
     tk.Label(frameDisplay, text="Y-Axes:").grid(row=1, column=2, padx=10, pady=5, sticky='w')
-    y_axis_combo = ttk.Combobox(frameDisplay, values=changeValueComboboxDisplay())
-    y_axis_combo.grid(row=1, column=3, padx=10, pady=5)
-    y_axis_combo.current(1)
+    y = ttk.Combobox(frameDisplay, values=changeValueComboboxDisplay(), textvariable=yAxis, state='readonly')
+    y.grid(row=1, column=3, padx=10, pady=5)
+    y.current(1)
 
     # X-Axis Transformation Options
     x_frame = tk.LabelFrame(frameDisplay, text="X-Axis Transformation")
@@ -550,20 +653,20 @@ def measuringParametes():
 
         # Tạo các thành phần trên giao diện
 
-        auto_radio = ttk.Radiobutton(main_frame, text="Automatic Recording", variable=recording_mode, value="auto")
-        manual_radio = ttk.Radiobutton(main_frame, text="Manual Recording", variable=recording_mode, value="manual")
+        auto_radio = ttk.Radiobutton(main_frame, text="Automatic Recording", variable=recording_mode, value=1)
+        manual_radio = ttk.Radiobutton(main_frame, text="Manual Recording", variable=recording_mode, value=2)
         append_check = ttk.Checkbutton(main_frame, text="Append New Meas. Series")
         meas_interval_label = ttk.Label(main_frame, text="Meas. Interv.:(ms)")
-        meas_interval = ttk.Entry(main_frame, width=5)
+        meas_interval = ttk.Entry(main_frame, width=5, textvariable=measInter)
         meas_interval.insert(0, "2")
         x_number_label = ttk.Label(main_frame, text="x Number:")
-        x_number = ttk.Entry(main_frame, width=5)
+        x_number = ttk.Entry(main_frame, width=5 )
         x_number.insert(0, "5000")
         trigger_label = ttk.Label(main_frame, text="Trigger:")
         trigger = ttk.Combobox(main_frame, width=5)
         meas_time_label = ttk.Label(main_frame, text="= Meas. Time:")
-        meas_time = ttk.Entry(main_frame, width=5)
-        meas_time.insert(0, "10")
+        meas_time = ttk.Entry(main_frame, textvariable= measTime, width=5)
+        measTime.set(10)
         time_unit = ttk.Combobox(main_frame, width=3)
         time_unit['values'] = ('s', 'ms', 'us')
         time_unit.set('s')
@@ -598,7 +701,19 @@ def measuringParametes():
             child.grid_configure(padx=5, pady=5)
 
 
+def openValueDisplay(data):
+    valueDisplay = tk.Toplevel(window)
+    valueDisplay.attributes("-topmost", True)
+    
+    # Tạo frame để chứa các nhãn
+    frame = tk.Frame(valueDisplay)
+    frame.pack(pady=40, padx=40)  # Điều chỉnh khoảng cách nếu cần
+    # Tạo nhãn với chữ lớn hơn
+    label1 = tk.Label(frame, text="{}=".format(data.symbol), font=("Arial", 20))
+    label1.pack(side=tk.LEFT)
 
+    data.setTopWindow(frame)
+    data.textValue.pack(side=tk.LEFT)
 
 
 
@@ -665,22 +780,97 @@ def openWindowF5(event=None):
         main_frame.rowconfigure(1, weight=1)
         main_frame.rowconfigure(2, weight=1)
 
+        windowF5.update_idletasks()
+        screen_width = windowF5.winfo_screenwidth()
+        screen_height = windowF5.winfo_screenheight()
+
+        # Lấy kích thước của cửa sổ
+        window_width = windowF5.winfo_width()
+        window_height = windowF5.winfo_height()
+
+        # Tính toán vị trí để đặt cửa sổ ở giữa màn hình
+        position_right = int(screen_width/2 - window_width/2)
+        position_down = int(screen_height/2 - window_height/2)
+
+        # Đặt cửa sổ ở giữa màn hình mà không cần cố định kích thước
+        windowF5.geometry(f'+{position_right}+{position_down}')
+
 def enterFormula(*arg):
     listFFT[indexNameFFT].formula = formulaEntry.get()
+    changeDisplayValue()
 
 def enterSymolFFT (*arg):
     listFFT[indexNameFFT].symbol = symolFFT.get()
+    changeDisplayValue()
 def enterUnitFFT (*arg):
     listFFT[indexNameFFT].util = unitFFT.get()
+    changeDisplayValue()
 def enterDecimalPlaceFFT (*arg):
     listFFT[indexNameFFT].decimalPlaces = decimalPlacesFFT.get()
+    changeDisplayValue()
+def changeRecording():
+    global timeStart 
+    timeStart = 0
 
+def startReadValue (event = None):
+    global timeStart
+    if timeStart == 0:
+        timeStart = int(TIME.time())
+    print(recording_mode.get())
+    if recording_mode.get() == 2:
+        timeCurrent = int(TIME.time())
+        between = timeCurrent - timeStart
+        data = [between]
+        if xAxis.get() == 't':
+            xData.append(between)
+        if yAxis.get() == 't':
+            yData.append(between)
+        for i in range(len(listDisplayValue)):
+            value = eval(listDisplayValue[i].formula)
+            data.append(value)
+            if xAxis.get() == listDisplayValue[i].symbol:
+                xData.append(value)
+            if yAxis.get() == listDisplayValue[i].symbol:
+                yData.append(value)
+        tableView.insert("", "end", values=data)
+        updateMatplotlib()
+    else:
+        threadingInser.start()
+
+        pass
+def threadingPart2Insert():
+    print(measInter.get(), measTime.get())
+    timeEnd = 0
+    while timeEnd <= measTime.get():
+        data = [timeEnd]
+        if xAxis.get() == 't':
+            xData.append(timeEnd)
+        if yAxis.get() == 't':
+            yData.append(timeEnd)
+        for i in range(len(listDisplayValue)):
+            value = eval(listDisplayValue[i].formula)
+            data.append(value)
+            if xAxis.get() == listDisplayValue[i].symbol:
+                xData.append(value)
+            if yAxis.get() == listDisplayValue[i].symbol:
+                yData.append(value)
+        tableView.insert("", "end", values=data)
+        updateMatplotlib()
+        TIME.sleep( measInter.get() / 1000 )
+        timeEnd += (measInter.get()/1000)   
+
+threadingInser = threading.Thread(target=threadingPart2Insert)
 window.bind('<F5>', openWindowF5)
+window.bind('<F9>', startReadValue)
 formulaEntry.trace('w', enterFormula)
 symolFFT.trace('w', enterSymolFFT)
 unitFFT.trace('w', enterUnitFFT)
 decimalPlacesFFT.trace('w', enterDecimalPlaceFFT)
 
+recording_mode.trace('w', changeRecording)
+
 openWindowF5()
+
+
 
 window.mainloop()
