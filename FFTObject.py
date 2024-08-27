@@ -10,6 +10,8 @@ class FFT:
        self.util = ""
        self.decimalPlaces = 3
        self.textValue = None  
+       self.form = 0
+       self.to = 20
     
 
     def createDisplay(self, window):

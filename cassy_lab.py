@@ -37,6 +37,8 @@ yData = []
 # global variable
 xAxis = None
 yAxis = None
+
+
 increase = 1
 U1 = None
 U2 = None
@@ -49,6 +51,8 @@ formulaEntry = tk.StringVar()
 symolFFT = tk.StringVar()
 unitFFT = tk.StringVar()
 decimalPlacesFFT = tk.IntVar()
+formFFT = tk.IntVar()
+toFFT = tk.IntVar()
 measInter = tk.IntVar()
 measTime = tk.IntVar()
 
@@ -90,6 +94,8 @@ def changeDisplayValue():
         listDisplayValue.append(oU2)
     listDisplayValue += listFFT
     displayColumn()
+    
+    
 
 
 
@@ -107,8 +113,11 @@ def readData():
             if U2 is not None:
                 U2 = float(dataText[1])
             for i in range(len(listDisplayValue)):
-                value = eval(listDisplayValue[i].formula)
-                listDisplayValue[i].resetValue(value)
+                try:    
+                    value = eval(listDisplayValue[i].formula)
+                    listDisplayValue[i].resetValue(value)
+                except:
+                    pass
         
                 
 
@@ -137,7 +146,7 @@ def perform_resize(event):
 def updateMatplotlib():
     global plt
 
-    plt.plot(np.array(xData), np.array(yData) , marker="o")
+    plt.plot(np.array(xData), np.array(yData) )
     canvas.draw()
     pass
 
@@ -161,17 +170,16 @@ def matplotlib():
     tableView.configure(xscrollcommand=scrollbar_x.set)
     
     # Tạo một figure cho matplotlib
-   
+    global fig , ax
 
     fig, ax = plt.subplots()
     plt.gca().spines['top'].set_visible(False)
     plt.gca().spines['right'].set_visible(False)
-   
 
     # Vẽ các đường lưới (grid lines) và thiết lập giới hạn trục
     ax.grid(True)
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 100)
+    ax.set_ylim(0, 40)
+    ax.set_xlim(0 , 10)
     global canvas
     # Tạo canvas để hiển thị biểu đồ trong cửa sổ Tkinter
     canvas = FigureCanvasTkAgg(fig, master=window)
@@ -191,6 +199,7 @@ def changeValueOptionMenu(data , value):
             print("Ket not thanh cong")
             matplotlib()
             threadingData.start()
+            measuringParametes()
 
             
 
@@ -469,12 +478,12 @@ def defFFT(frameMain):
             unit_entry = tk.Entry(prop_frame, width=5, textvariable=unitFFT)
             unit_entry.grid(row=6, column=3, sticky='w', padx=5)
 
-            tk.Label(prop_frame, text="From:").grid(row=7, column=0, sticky='w')
-            from_entry = tk.Entry(prop_frame, width=5)
+            tk.Label(prop_frame, text="From: ").grid(row=7, column=0, sticky='w')
+            from_entry = tk.Entry(prop_frame, width=5, textvariable=formFFT)
             from_entry.grid(row=7, column=1, sticky='w', padx=5)
 
             tk.Label(prop_frame, text="To:").grid(row=7, column=2, sticky='w')
-            to_entry = tk.Entry(prop_frame, width=5)
+            to_entry = tk.Entry(prop_frame, width=5, textvariable=toFFT)
             to_entry.grid(row=7, column=3, sticky='w', padx=5)
 
             tk.Label(prop_frame, text="Decimal Places:").grid(row=8, column=0, sticky='w')
@@ -484,6 +493,8 @@ def defFFT(frameMain):
             symolFFT.set(listFFT[indexNameFFT].symbol)
             unitFFT.set(listFFT[indexNameFFT].util)
             decimalPlacesFFT.set(listFFT[indexNameFFT].decimalPlaces)
+            toFFT.set(listFFT[indexNameFFT].to)
+            formFFT.set(listFFT[indexNameFFT].form)
 
         else:
             prop_frame.destroy()
@@ -808,11 +819,21 @@ def enterUnitFFT (*arg):
 def enterDecimalPlaceFFT (*arg):
     listFFT[indexNameFFT].decimalPlaces = decimalPlacesFFT.get()
     changeDisplayValue()
+def enterFormFFT(*arg):
+    listFFT[indexNameFFT].form = formFFT.get()
+    changeDisplayValue()
+
+def enterToFFT(*arg):
+    listFFT[indexNameFFT].to = toFFT.get()
+    changeDisplayValue()
+
+
 def changeRecording():
     global timeStart 
     timeStart = 0
 
 def startReadValue (event = None):
+    changeValueAxis()
     global timeStart
     if timeStart == 0:
         timeStart = int(TIME.time())
@@ -832,7 +853,7 @@ def startReadValue (event = None):
                 xData.append(value)
             if yAxis.get() == listDisplayValue[i].symbol:
                 yData.append(value)
-        tableView.insert("", "end", values=data)
+        tableView.insert("", 0, values=data)
         updateMatplotlib()
     else:
         threadingInser.start()
@@ -848,17 +869,51 @@ def threadingPart2Insert():
         if yAxis.get() == 't':
             yData.append(timeEnd)
         for i in range(len(listDisplayValue)):
-            value = eval(listDisplayValue[i].formula)
+            value = float (eval(listDisplayValue[i].formula))
             data.append(value)
             if xAxis.get() == listDisplayValue[i].symbol:
                 xData.append(value)
             if yAxis.get() == listDisplayValue[i].symbol:
                 yData.append(value)
-        tableView.insert("", "end", values=data)
+        tableView.insert("", 0, values=data)
         updateMatplotlib()
         TIME.sleep( measInter.get() / 1000 )
-        timeEnd += (measInter.get()/1000)   
+        timeEnd += (measInter.get()/ 1000)   
 
+def line():
+    pass
+def parabola():
+    pass
+def bolaX1():
+    pass
+def bolaX2():
+    pass
+def bolaEX():
+    pass
+
+def changeValueAxis():
+    global ax
+    if xAxis.get() == 't':
+        ax.set_xlim(0, measTime.get())
+    if yAxis.get() == 't':
+        ax.set_ylim(0, measTime.get())
+    for i in range(len(listDisplayValue)):
+        if xAxis.get() == listDisplayValue[i].symbol:
+            ax.set_xlim(listDisplayValue[i].f0rm, listDisplayValue[i].to)
+        if yAxis.get() == listDisplayValue[i].symbol:
+            print(1123)
+            ax.set_ylim(listDisplayValue[i].form, listDisplayValue[i].to)
+            print(listDisplayValue[i].form, listDisplayValue[i].to)
+    
+
+def on_right_click(event):
+    context_menu = tk.Menu(window, tearoff=0)
+    context_menu.add_command(label="Best – fit straight line", command=line)
+    context_menu.add_command(label="Parabola", command=parabola)
+    context_menu.add_command(label="Hyperbola 1/x", command=bolaX1)
+    context_menu.add_command(label="Hyperbola 1/x^2", command=bolaX2)
+    context_menu.add_command(label="Exponential Function e^x", command=bolaEX)
+    print("Bạn đã click chuột phải tại tọa độ:", event.x, event.y)
 threadingInser = threading.Thread(target=threadingPart2Insert)
 window.bind('<F5>', openWindowF5)
 window.bind('<F9>', startReadValue)
@@ -866,6 +921,9 @@ formulaEntry.trace('w', enterFormula)
 symolFFT.trace('w', enterSymolFFT)
 unitFFT.trace('w', enterUnitFFT)
 decimalPlacesFFT.trace('w', enterDecimalPlaceFFT)
+toFFT.trace('w', enterToFFT)
+formFFT.trace('w', enterFormFFT)
+window.bind("<Button-3>", on_right_click)
 
 recording_mode.trace('w', changeRecording)
 
