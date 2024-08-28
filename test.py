@@ -1,54 +1,39 @@
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-import tkinter as tk
 import numpy as np
-import matplotlib.animation as animation
 
-# Khởi tạo cửa sổ Tkinter
-window = tk.Tk()
-window.title("Biểu đồ thời gian thực trong Tkinter")
+# Tạo dữ liệu ví dụ ban đầu
+x = list(np.linspace(0, 10, 100))
+y = list(np.sin(x))
 
-# Tạo figure và axes cho biểu đồ
 fig, ax = plt.subplots()
-x_data, y_data = [], []
+line, = ax.plot(x, y, 'o-', label='Original Data')
 
-# Thiết lập giới hạn ban đầu cho trục x và y
-ax.set_xlim(0, 10)
-ax.set_ylim(-1, 1)
+# Biến để lưu trữ các điểm được thêm vào khi di chuyển chuột
+added_x = []
+added_y = []
 
-# Vẽ đường biểu đồ ban đầu
-line, = ax.plot([], [], lw=2)
+# Đồ thị mới sẽ chứa các điểm được thêm vào
+new_line, = ax.plot([], [], 'r-o', label='Added Points')
 
-# Hàm khởi tạo dữ liệu biểu đồ
-def init():
-    line.set_data([], [])
-    return line,
+# Sự kiện khi di chuyển chuột
+def on_motion(event):
+    if event.inaxes != ax:
+        return
 
-# Hàm cập nhật dữ liệu cho biểu đồ theo thời gian thực
-def update(frame):
-    x_data.append(frame)
-    y_data.append(np.sin(frame))  # Hàm sin của giá trị frame
+    # Thêm tọa độ hiện tại vào danh sách các điểm
+    x.append(event.xdata)
+    y.append(event.ydata)
 
-    line.set_data(x_data, y_data)
+    # Cập nhật dữ liệu cho đồ thị mới
+    line.set_data(x, y)
 
-    # Nếu x_data vượt quá giới hạn, cập nhật giới hạn của trục x
-    if frame > 10:
-        ax.set_xlim(frame - 10, frame)
-    
-    return line,
+    # Vẽ lại biểu đồ
+    fig.canvas.draw()
 
-# Thiết lập animation để cập nhật biểu đồ mỗi 100ms
-ani = animation.FuncAnimation(fig, update, frames=np.linspace(0, 20, 200), init_func=init, blit=True, interval=100, repeat=False)
+# Kết nối sự kiện với biểu đồ
+fig.canvas.mpl_connect('motion_notify_event', on_motion)
 
-# Tạo canvas để hiển thị biểu đồ trong cửa sổ Tkinter
-canvas = FigureCanvasTkAgg(fig, master=window)
-canvas.draw()
-canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+# Hiển thị chú thích (legend)
+ax.legend()
 
-# Tạo thanh công cụ tương tác
-toolbar = NavigationToolbar2Tk(canvas, window)
-toolbar.update()
-toolbar.pack(side=tk.TOP, fill=tk.X)
-
-# Khởi chạy ứng dụng Tkinter
-window.mainloop()
+plt.show()

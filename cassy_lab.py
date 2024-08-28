@@ -11,7 +11,7 @@ import FFTObject
 import threading
 import time as TIME
 import queue
-
+from scipy.optimize import curve_fit
 logging.basicConfig(level=logging.DEBUG)
 
 
@@ -32,6 +32,9 @@ measuringParametesWindow = None
 timeStart = 0
 window.title("Geeeks For Geeks")
 
+startIndex = None
+endIndex = None
+highlighted_line = None
 xData = []
 yData = []
 # global variable
@@ -146,10 +149,18 @@ def perform_resize(event):
 def updateMatplotlib():
     global plt
 
-    plt.plot(np.array(xData), np.array(yData) )
+    lineM.set_data(np.array(xData), np.array(yData) )
     canvas.draw()
     pass
-
+def onpick(event):
+    # Lấy thông tin điểm được click
+    if event.artist != lineM:
+        return
+    ind = event.ind
+    if isinstance(ind, (list, np.ndarray)):
+        print(ind)
+        ind = ind[0]
+    print(f"Clicked data: x={xData[ind]}, y={yData[ind]}")
 def matplotlib():
     global tableView
     # Tạo một khung để chứa canvas và thanh công cụ
@@ -170,12 +181,15 @@ def matplotlib():
     tableView.configure(xscrollcommand=scrollbar_x.set)
     
     # Tạo một figure cho matplotlib
-    global fig , ax
+    global fig , ax, lineM
 
     fig, ax = plt.subplots()
+    lineM , = ax.plot([], [], marker = ".", picker = True)
     plt.gca().spines['top'].set_visible(False)
     plt.gca().spines['right'].set_visible(False)
-
+    fig.canvas.mpl_connect('button_press_event', onClick)
+    fig.canvas.mpl_connect('motion_notify_event', onMove)
+    fig.canvas.mpl_connect('button_release_event', onRelease)
     # Vẽ các đường lưới (grid lines) và thiết lập giới hạn trục
     ax.grid(True)
     ax.set_ylim(0, 40)
@@ -185,7 +199,7 @@ def matplotlib():
     canvas = FigureCanvasTkAgg(fig, master=window)
     canvas.draw()
     canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-
+    fig.canvas.mpl_connect("pick_event", onpick)
     # Tạo thanh công cụ tương tác
     toolbar = NavigationToolbar2Tk(canvas, window)
     toolbar.update()
@@ -862,6 +876,7 @@ def startReadValue (event = None):
 def threadingPart2Insert():
     print(measInter.get(), measTime.get())
     timeEnd = 0
+    rou = round(measInter.get() / 1000 , 2)
     while timeEnd <= measTime.get():
         data = [timeEnd]
         if xAxis.get() == 't':
@@ -877,20 +892,60 @@ def threadingPart2Insert():
                 yData.append(value)
         tableView.insert("", 0, values=data)
         updateMatplotlib()
-        TIME.sleep( measInter.get() / 1000 )
-        timeEnd += (measInter.get()/ 1000)   
+        TIME.sleep( rou)
+        timeEnd += rou  
+fitFunction = [0 , 2, 0, 0, 0, 0 , 0]
 
-def line():
+
+
+def straightLine(xFit, yFit):
+    def fitStraightLine(x, a , b):
+        return a*x + b
+    popt, pcov = curve_fit(fitStraightLine, xFit, yFit)
+    a, b = popt
+    figgg, axxx = plt.subplots()
+    lineFit, = axxx.plot(xFit, fitStraightLine(xFit, *popt), color='red', label='Hàm parabol fit')
+    figgg.canvas.draw()
+    print(1234)
+    
+
+
+
+
+def parabola(x, a, b, c):
+    return a*x**2 + b*x + c
+def exponential_function(x, a, b):
+    return a * np.exp(b * x)
+def line1():
+    global fitFunction
+    fitFunction = [1 , 0, 0, 0, 0, 0 , 0]
+
+    pass
+def line2():
+    global fitFunction
+    fitFunction = [0 , 2, 0, 0, 0, 0 , 0]
+
     pass
 def parabola():
+    global fitFunction
+    fitFunction = [0 , 0, 3, 0, 0, 0 , 0]
     pass
 def bolaX1():
+    global fitFunction
+    fitFunction = [0 , 0, 0, 4, 0, 0 , 0]
     pass
 def bolaX2():
+    global fitFunction
+    fitFunction = [0 , 0, 0, 0, 5, 0 , 0]
     pass
 def bolaEX():
+    global fitFunction
+    fitFunction = [0 , 0, 0, 0, 0, 6 , 0]
     pass
-
+def bolaEX2():
+    global fitFunction
+    fitFunction = [0 , 0, 0, 0, 0, 0 , 7]
+    pass
 def changeValueAxis():
     global ax
     if xAxis.get() == 't':
@@ -906,14 +961,55 @@ def changeValueAxis():
             print(listDisplayValue[i].form, listDisplayValue[i].to)
     
 
+
 def on_right_click(event):
     context_menu = tk.Menu(window, tearoff=0)
-    context_menu.add_command(label="Best – fit straight line", command=line)
+    context_menu.add_command(label="Best – fit straight line", command=line2)
     context_menu.add_command(label="Parabola", command=parabola)
     context_menu.add_command(label="Hyperbola 1/x", command=bolaX1)
     context_menu.add_command(label="Hyperbola 1/x^2", command=bolaX2)
     context_menu.add_command(label="Exponential Function e^x", command=bolaEX)
     print("Bạn đã click chuột phải tại tọa độ:", event.x, event.y)
+
+def onClick(event):
+    global lineMM
+    if event.inaxes != ax:
+        return
+    figg, axx = plt.subplots()
+    lineMM , = ax.plot([], [], color='red', linewidth=2)
+    global startIndex
+    startIndex = np.argmin(np.abs(xData - event.xdata))
+    print(startIndex)
+def onMove(event):
+    global endIndex , lineMM
+    if event.inaxes != ax or startIndex is None:
+        return
+    endIndex = np.argmin(np.abs(xData - event.xdata))
+    if endIndex > startIndex:
+        lineMM.set_data(xData[startIndex:endIndex+1], yData[startIndex:endIndex+1])
+    
+    fig.canvas.draw()
+    print(endIndex)
+def onRelease(event):
+    global lineMM
+    global startIndex, endIndex
+    # xFit = np.array(xData[startIndex:endIndex+1])
+    # yFit = np.array(yData[startIndex:endIndex+1])
+    xFit = np.array([1, 2, 3, 4, 5])
+    yFit = np.array([1, 2, 3, 4, 5])
+    startIndex = None
+    endIndex = None
+    lineMM.remove()
+    fig.canvas.draw()
+    lineMM = None
+    
+    for i in fitFunction:
+        if (i == 2 ):
+            straightLine(xFit, yFit)
+
+    print("end")
+
+    
 threadingInser = threading.Thread(target=threadingPart2Insert)
 window.bind('<F5>', openWindowF5)
 window.bind('<F9>', startReadValue)
