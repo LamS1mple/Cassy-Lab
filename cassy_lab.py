@@ -876,9 +876,9 @@ def startReadValue (event = None):
 def threadingPart2Insert():
     print(measInter.get(), measTime.get())
     timeEnd = 0
-    rou = round(measInter.get() / 1000 , 2)
+    rou = measInter.get() / 1000
     while timeEnd <= measTime.get():
-        data = [timeEnd]
+        data = [round(timeEnd,2)]
         if xAxis.get() == 't':
             xData.append(timeEnd)
         if yAxis.get() == 't':
@@ -894,28 +894,35 @@ def threadingPart2Insert():
         updateMatplotlib()
         TIME.sleep( rou)
         timeEnd += rou  
-fitFunction = [0 , 2, 0, 0, 0, 0 , 0]
+fitFunction = [0 , 0, 0, 0, 0, 0 , 0]
 
 
 
-def straightLine(xFit, yFit):
-    def fitStraightLine(x, a , b):
-        return a*x + b
-    popt, pcov = curve_fit(fitStraightLine, xFit, yFit)
-    a, b = popt
-    figgg, axxx = plt.subplots()
-    lineFit, = axxx.plot(xFit, fitStraightLine(xFit, *popt), color='red', label='Hàm parabol fit')
-    figgg.canvas.draw()
-    print(1234)
+
+
+def fitLine(fuc,xFit, yFit):
+    
+    popt, pcov = curve_fit(fuc, xFit, yFit)
+    
+    ax.plot(xFit, fuc(xFit, *popt), color='black', label='Hàm fit')
+    fig.canvas.draw()
     
 
+def fitStraightLineOrigin(x, a):
+    return a * x
 
-
-
+def fitStraightLine(x, a , b):
+    return a*x + b
 def parabola(x, a, b, c):
     return a*x**2 + b*x + c
+def funcBola1(x, a, b):
+    return a / x + b
+def funcBola2(x, a, b):
+    return a / x**2 + b
 def exponential_function(x, a, b):
     return a * np.exp(b * x)
+def exponential_function2(x, a, b):
+    return a * np.exp(-x) + b
 def line1():
     global fitFunction
     fitFunction = [1 , 0, 0, 0, 0, 0 , 0]
@@ -954,7 +961,7 @@ def changeValueAxis():
         ax.set_ylim(0, measTime.get())
     for i in range(len(listDisplayValue)):
         if xAxis.get() == listDisplayValue[i].symbol:
-            ax.set_xlim(listDisplayValue[i].f0rm, listDisplayValue[i].to)
+            ax.set_xlim(listDisplayValue[i].form, listDisplayValue[i].to)
         if yAxis.get() == listDisplayValue[i].symbol:
             print(1123)
             ax.set_ylim(listDisplayValue[i].form, listDisplayValue[i].to)
@@ -964,11 +971,15 @@ def changeValueAxis():
 
 def on_right_click(event):
     context_menu = tk.Menu(window, tearoff=0)
+    context_menu.add_command(label="Straight line throught Origin", command=line1)
     context_menu.add_command(label="Best – fit straight line", command=line2)
     context_menu.add_command(label="Parabola", command=parabola)
     context_menu.add_command(label="Hyperbola 1/x", command=bolaX1)
     context_menu.add_command(label="Hyperbola 1/x^2", command=bolaX2)
     context_menu.add_command(label="Exponential Function e^x", command=bolaEX)
+    context_menu.add_command(label="Exponential Function e^-x", command=bolaEX2)
+    context_menu.tk_popup(event.x_root, event.y_root)
+
     print("Bạn đã click chuột phải tại tọa độ:", event.x, event.y)
 
 def onClick(event):
@@ -993,10 +1004,10 @@ def onMove(event):
 def onRelease(event):
     global lineMM
     global startIndex, endIndex
-    # xFit = np.array(xData[startIndex:endIndex+1])
-    # yFit = np.array(yData[startIndex:endIndex+1])
-    xFit = np.array([1, 2, 3, 4, 5])
-    yFit = np.array([1, 2, 3, 4, 5])
+    xFit = np.array(xData[startIndex:endIndex+1])
+    yFit = np.array(yData[startIndex:endIndex+1])
+    # xFit = np.array([1, 2, 3, 4, 5])
+    # yFit = np.array([1, 2, 3, 4, 5])
     startIndex = None
     endIndex = None
     lineMM.remove()
@@ -1004,10 +1015,22 @@ def onRelease(event):
     lineMM = None
     
     for i in fitFunction:
+        if (i == 1 ):
+            fitLine(fitStraightLineOrigin,xFit, yFit)
         if (i == 2 ):
-            straightLine(xFit, yFit)
+            fitLine(fitStraightLine,xFit, yFit)
+        if (i == 3):
+            fitLine(parabola, xFit, yFit)
+        if (i == 4):
+            fitLine(funcBola1, xFit, yFit)
+        if (i == 5):
+            fitLine(funcBola2, xFit, yFit)
+        if (i == 6):
+            fitLine(exponential_function, xFit, yFit)
+        if (i == 7):
+            fitLine(exponential_function2, xFit, yFit)
 
-    print("end")
+    
 
     
 threadingInser = threading.Thread(target=threadingPart2Insert)
