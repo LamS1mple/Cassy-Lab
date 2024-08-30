@@ -32,7 +32,7 @@ showU1Box = None
 showU2Box = None
 measuringParametesWindow = None
 timeStart = 0
-window.title("Geeeks For Geeks")
+window.title("Cassy")
 
 startIndex = None
 endIndex = None
