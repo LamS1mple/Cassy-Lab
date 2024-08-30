@@ -12,6 +12,7 @@ import threading
 import time as TIME
 import queue
 from scipy.optimize import curve_fit
+from math import cos, sin ,tan
 logging.basicConfig(level=logging.DEBUG)
 
 
@@ -21,6 +22,7 @@ width= window.winfo_screenwidth()
 height= window.winfo_screenheight()
 #setting tkinter window size
 window.state('zoomed')
+n = 0
 # data radio
 recording_mode = tk.IntVar(window)
 recording_mode.set(1)
@@ -61,17 +63,21 @@ measTime = tk.IntVar()
 
 def displayColumn():
     global tableView
-    nameTable = ['t(s)']
+    nameTable = ['t(s)', "n"]
 
     for i in range(len(listDisplayValue)):
         nameTable.append("{}".format(listDisplayValue[i].symbol))
 
     tableView['columns'] = nameTable
     tableView.heading(nameTable[0] , text = nameTable[0])
-    tableView.column("t(s)", width=100)
-    for i in range(1,len( nameTable)):
-        tableView.column(nameTable[i], width=100)
-        tableView.heading(nameTable[i], text= "{}({})".format(nameTable[i] ,  listDisplayValue[i - 1].util))
+    tableView.heading(nameTable[1] , text = nameTable[1])
+
+    tableView.column("t(s)", width=50)
+    tableView.column("n", width=50)
+
+    for i in range(2,len( nameTable)):
+        tableView.column(nameTable[i], width=50)
+        tableView.heading(nameTable[i], text= "{}({})".format(nameTable[i] ,  listDisplayValue[i - 2].util))
         
 
 
@@ -847,19 +853,25 @@ def changeRecording():
     timeStart = 0
 
 def startReadValue (event = None):
+
     changeValueAxis()
-    global timeStart
+    global timeStart, n
+    n = 0
     if timeStart == 0:
         timeStart = int(TIME.time())
     print(recording_mode.get())
     if recording_mode.get() == 2:
         timeCurrent = int(TIME.time())
         between = timeCurrent - timeStart
-        data = [between]
+        data = [between, n]
         if xAxis.get() == 't':
             xData.append(between)
         if yAxis.get() == 't':
             yData.append(between)
+        if xAxis.get() == 'n':
+            xData.append(n)
+        if yAxis.get() == 'n':
+            yData.append(n)
         for i in range(len(listDisplayValue)):
             value = eval(listDisplayValue[i].formula)
             data.append(value)
@@ -867,7 +879,7 @@ def startReadValue (event = None):
                 xData.append(value)
             if yAxis.get() == listDisplayValue[i].symbol:
                 yData.append(value)
-        tableView.insert("", 0, values=data)
+        tableView.insert("", 'end', values=data)
         updateMatplotlib()
     else:
         threadingInser.start()
@@ -876,13 +888,19 @@ def startReadValue (event = None):
 def threadingPart2Insert():
     print(measInter.get(), measTime.get())
     timeEnd = 0
+    global n 
     rou = measInter.get() / 1000
     while timeEnd <= measTime.get():
-        data = [round(timeEnd,2)]
+        
+        data = [round(timeEnd,2), n]
         if xAxis.get() == 't':
             xData.append(timeEnd)
         if yAxis.get() == 't':
             yData.append(timeEnd)
+        if xAxis.get() == 'n':
+            xData.append(n)
+        if yAxis.get() == 'n':
+            yData.append(n)
         for i in range(len(listDisplayValue)):
             value = float (eval(listDisplayValue[i].formula))
             data.append(value)
@@ -890,10 +908,11 @@ def threadingPart2Insert():
                 xData.append(value)
             if yAxis.get() == listDisplayValue[i].symbol:
                 yData.append(value)
-        tableView.insert("", 0, values=data)
+        tableView.insert("", 'end', values=data)
         updateMatplotlib()
         TIME.sleep( rou)
         timeEnd += rou  
+        n += 1
 fitFunction = [0 , 0, 0, 0, 0, 0 , 0]
 
 
@@ -982,27 +1001,58 @@ def on_right_click(event):
 
     print("Bạn đã click chuột phải tại tọa độ:", event.x, event.y)
 
+indexClick = None
+def focus_on_item():
+    dataTable =  tableView.get_children()
+    indexView = dataTable[indexClick]
+    tableView.selection_set(indexView)
+    tableView.see(indexView)
 def onClick(event):
-    global lineMM
+    global lineMM, indexClick,startIndex
+    check = True
     if event.inaxes != ax:
         return
+    startIndex = np.argmin(np.abs(xData - event.xdata))
+    indexClick = startIndex
+    focus_on_item()
+    for i in fitFunction:
+        if i != 0:
+            check = False
+    if (check):
+        startIndex = None
+        return
+    
+    
     figg, axx = plt.subplots()
     lineMM , = ax.plot([], [], color='red', linewidth=2)
-    global startIndex
-    startIndex = np.argmin(np.abs(xData - event.xdata))
+    
     print(startIndex)
 def onMove(event):
-    global endIndex , lineMM
-    if event.inaxes != ax or startIndex is None:
+    global endIndex, indexClick , lineMM
+    if event.inaxes != ax :
+        return
+    
+    if startIndex is None:
         return
     endIndex = np.argmin(np.abs(xData - event.xdata))
+    indexClick = endIndex
+    focus_on_item()
     if endIndex > startIndex:
         lineMM.set_data(xData[startIndex:endIndex+1], yData[startIndex:endIndex+1])
     
     fig.canvas.draw()
+    
     print(endIndex)
 def onRelease(event):
-    global lineMM
+    global lineMM, fitFunction
+    check = True
+    for i in fitFunction:
+        if i != 0:
+            check = False
+    if (check ):
+        return
+    
+    
     global startIndex, endIndex
     xFit = np.array(xData[startIndex:endIndex+1])
     yFit = np.array(yData[startIndex:endIndex+1])
@@ -1029,7 +1079,7 @@ def onRelease(event):
             fitLine(exponential_function, xFit, yFit)
         if (i == 7):
             fitLine(exponential_function2, xFit, yFit)
-
+    fitFunction =  [0 , 0, 0, 0, 0, 0 , 0]
     
 
     
