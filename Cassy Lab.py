@@ -689,7 +689,7 @@ def measuringParametes():
         append_check = ttk.Checkbutton(main_frame, text="Append New Meas. Series")
         meas_interval_label = ttk.Label(main_frame, text="Meas. Interv.:(ms)")
         meas_interval = ttk.Entry(main_frame, width=5, textvariable=measInter)
-        meas_interval.insert(0, "2")
+        meas_interval.insert(0, "10")
         x_number_label = ttk.Label(main_frame, text="x Number:")
         x_number = ttk.Entry(main_frame, width=5 )
         x_number.insert(0, "5000")
@@ -855,14 +855,16 @@ def changeRecording():
 def startReadValue (event = None):
 
     changeValueAxis()
-    global timeStart, n
+    global timeStart, n, time
     n = 0
     if timeStart == 0:
         timeStart = int(TIME.time())
+    time = 0
     print(recording_mode.get())
     if recording_mode.get() == 2:
         timeCurrent = int(TIME.time())
         between = timeCurrent - timeStart
+        time = between
         data = [between, n]
         if xAxis.get() == 't':
             xData.append(between)
@@ -881,6 +883,7 @@ def startReadValue (event = None):
                 yData.append(value)
         tableView.insert("", 'end', values=data)
         updateMatplotlib()
+        changelength()
     else:
         threadingInser.start()
 
@@ -888,7 +891,7 @@ def startReadValue (event = None):
 def threadingPart2Insert():
     print(measInter.get(), measTime.get())
     timeEnd = 0
-    global n 
+    global n ,time
     rou = measInter.get() / 1000
     while timeEnd <= measTime.get():
         
@@ -902,7 +905,7 @@ def threadingPart2Insert():
         if yAxis.get() == 'n':
             yData.append(n)
         for i in range(len(listDisplayValue)):
-            value = float (eval(listDisplayValue[i].formula))
+            value = round(float (eval(listDisplayValue[i].formula)), 2)
             data.append(value)
             if xAxis.get() == listDisplayValue[i].symbol:
                 xData.append(value)
@@ -912,7 +915,9 @@ def threadingPart2Insert():
         updateMatplotlib()
         TIME.sleep( rou)
         timeEnd += rou  
+        time = timeEnd
         n += 1
+        changelength()
 fitFunction = [0 , 0, 0, 0, 0, 0 , 0]
 
 
@@ -986,7 +991,23 @@ def changeValueAxis():
             ax.set_ylim(listDisplayValue[i].form, listDisplayValue[i].to)
             print(listDisplayValue[i].form, listDisplayValue[i].to)
     
+def changelength():
+    left, right = ax.get_xlim()
+    bottom, top = ax.get_ylim()
+    if (left > xData[0]):
+        left = xData[0] - 5
+    if (right <= xData[-1]):
+        right = xData[-1] + 5
+    if (bottom > yData[0]):
+        bottom = yData[0] - 5
+    if (top <= yData[-1]):
+        top = yData[-1] + 5
+    ax.set_xlim(left, right)
+    ax.set_ylim(bottom, top)
 
+    
+
+    pass
 
 def on_right_click(event):
     context_menu = tk.Menu(window, tearoff=0)
