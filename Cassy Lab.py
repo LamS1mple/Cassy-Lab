@@ -34,6 +34,9 @@ measuringParametesWindow = None
 timeStart = 0
 window.title("Cassy")
 
+stop_eventData = threading.Event()
+stop_eventInsert = threading.Event()
+
 startIndex = None
 endIndex = None
 highlighted_line = None
@@ -45,8 +48,8 @@ yAxis = None
 
 
 increase = 1
-U1 = None
-U2 = None
+UA1 = None
+UB1 = None
 time = 0
 n = 0
 listDisplayValue = []
@@ -85,19 +88,19 @@ def displayColumn():
 def changeDisplayValue():
     global listDisplayValue
     listDisplayValue = []
-    if U1 is not None:
+    if UA1 is not None:
         oU1 =  FFTObject.FFT(0)
-        oU1.name = "U1"
-        oU1.formula = "U1"
-        oU1.symbol = "U1"
+        oU1.name = "UA1"
+        oU1.formula = "UA1"
+        oU1.symbol = "UA1"
         oU1.util = "V"
         oU1.decimalPlaces = 3
         listDisplayValue.append(oU1)
-    if U2 is not None:
+    if UB1 is not None:
         oU2 =  FFTObject.FFT(0)
-        oU2.name = "U2"
-        oU2.formula = "U2"
-        oU2.symbol = "U2"
+        oU2.name = "UB1"
+        oU2.formula = "UB1"
+        oU2.symbol = "UB1"
         oU2.util = "V"
         oU2.decimalPlaces = 3
         listDisplayValue.append(oU2)
@@ -109,24 +112,27 @@ def changeDisplayValue():
 
 
 def readData():
-    global dataText, U1, U2
-    while True:
+    global dataText, UA1, UB1
+    while not stop_eventData.is_set():
+        print(1)
         l = len(listDisplayValue)
-       
-        data = arduino.readline().decode().strip()
-        if data:
-            print(data)
-            dataText = data.split("|")
-            if U1 is not None:
-                U1 = float(dataText[0])
-            if U2 is not None:
-                U2 = float(dataText[1])
-            for i in range(len(listDisplayValue)):
-                try:    
+        try:
+            data = arduino.readline().decode().strip()
+            if data:
+                print(data)
+                dataText = data.split("|")
+                if UA1 is not None:
+                    UA1 = float(dataText[0])
+                if UB1 is not None:
+                    UB1 = float(dataText[1])
+                for i in range(len(listDisplayValue)):
+                    
                     value = eval(listDisplayValue[i].formula)
                     listDisplayValue[i].resetValue(value)
-                except:
-                    pass
+        except:
+            arduino.close()
+            return
+            
         
                 
 
@@ -306,9 +312,9 @@ def show_u1_box():
 
 
 def click_u1(event):
-    global U1
-    U1 = float(dataText[0])
-    label1.config(text="U1")
+    global UA1
+    UA1 = float(dataText[0])
+    label1.config(text="UA1")
     show_u1_box()
     changeDisplayValue()
     listDisplayValue[0].createDisplay(window)
@@ -386,12 +392,12 @@ def show_u2_box():
 
 
 def click_u2(event):
-    global U2
-    U2 = float(dataText[1])
-    label2.config(text="U2")
+    global UB1
+    UB1 = float(dataText[1])
+    label2.config(text="UB1")
     show_u2_box()
     changeDisplayValue()
-    if U1 is not None:
+    if UA1 is not None:
         listDisplayValue[1].createDisplay(window)
     else:
         listDisplayValue[0].createDisplay(window)
@@ -402,15 +408,15 @@ def defCassy(frameMain):
     global label2
     frameCassy = ttk.Frame(frameMain, borderwidth=5, relief="sunken", padding="10")
     frameCassy.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5, pady=5)
-    label1 = tk.Label(frameCassy, text="Click here for U1", bg="lightblue", width=20, height=5)
+    label1 = tk.Label(frameCassy, text="Click here for UA1", bg="lightblue", width=20, height=5)
     label1.grid(row=0, column=0)
 
-    label2 = tk.Label(frameCassy, text="Click here for U2", bg="lightgreen", width=20, height=5)
+    label2 = tk.Label(frameCassy, text="Click here for UB1", bg="lightgreen", width=20, height=5)
     label2.grid(row=1, column=0)
-    if U1 is not None:
-        label1.config(text="U1")
-    if U2 is not None:
-        label2.config(text="U2")
+    if UA1 is not None:
+        label1.config(text="UA1")
+    if UB1 is not None:
+        label2.config(text="UB1")
 
     # Gắn sự kiện click vào label
     label1.bind("<Button-1>", click_u1)
@@ -474,7 +480,7 @@ def defFFT(frameMain):
             param_entry = tk.Entry(prop_frame)
             param_entry.grid(row=0, column=1, padx=5)
 
-            tk.Radiobutton(prop_frame, text="Formula (time,date,n,t,U1,U2) =", value=2).grid(row=1, column=0, sticky='w')
+            tk.Radiobutton(prop_frame, text="Formula (time,date,n,t,UA1,UB1) =", value=2).grid(row=1, column=0, sticky='w')
             formula_entry = tk.Entry(prop_frame, textvariable=formulaEntry)
             formula_entry.grid(row=1, column=1, padx=5)
 
@@ -603,10 +609,10 @@ def defDisplay(frameMain):
         listNameQuatity.append("t")
         listNameQuatity.append("n")
 
-        if U1  is not None:
-            listNameQuatity.append("U1")
-        if U2 is not None:
-            listNameQuatity.append("U2")
+        if UA1  is not None:
+            listNameQuatity.append("UA1")
+        if UB1 is not None:
+            listNameQuatity.append("UB1")
         for i in range(len(listFFT)):
             listNameQuatity.append(listFFT[i].symbol)
         return listNameQuatity
@@ -885,6 +891,8 @@ def startReadValue (event = None):
         updateMatplotlib()
         changelength()
     else:
+        global stop_eventInsert
+        stop_eventInsert.clear()
         threadingInser.start()
 
         pass
@@ -893,8 +901,11 @@ def threadingPart2Insert():
     timeEnd = 0
     global n ,time
     rou = measInter.get() / 1000
-    while timeEnd <= measTime.get():
-        
+    while timeEnd <= measTime.get() :
+        if  stop_eventInsert.is_set(): 
+            
+            break
+        print(2)
         data = [round(timeEnd,2), n]
         if xAxis.get() == 't':
             xData.append(timeEnd)
@@ -911,13 +922,16 @@ def threadingPart2Insert():
                 xData.append(value)
             if yAxis.get() == listDisplayValue[i].symbol:
                 yData.append(value)
-        tableView.insert("", 'end', values=data)
-        updateMatplotlib()
-        TIME.sleep( rou)
-        timeEnd += rou  
-        time = timeEnd
-        n += 1
-        changelength()
+        try:
+            tableView.insert("", 'end', values=data)
+            updateMatplotlib()
+            TIME.sleep( rou)
+            timeEnd += rou  
+            time = timeEnd
+            n += 1
+            changelength()
+        except:
+            pass
 fitFunction = [0 , 0, 0, 0, 0, 0 , 0]
 
 
@@ -1119,6 +1133,18 @@ recording_mode.trace('w', changeRecording)
 
 openWindowF5()
 
+def on_closing():
 
+
+    global stop_eventData, stop_eventInsert, arduino, window, canvas
+
+    stop_eventData.set()
+    stop_eventInsert.set()
+    window.destroy()
+    window.quit()
+    print("out")
+    
+
+window.protocol("WM_DELETE_WINDOW", on_closing)
 
 window.mainloop()
