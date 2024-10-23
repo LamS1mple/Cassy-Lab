@@ -1067,12 +1067,25 @@ def focus_on_item():
     tableView.selection_set(indexView)
     tableView.see(indexView)
 def onClick(event):
-    global lineMM, indexClick,startIndex
+    global lineMM, indexClick,startIndex, selectDoThi
     check = True
     if event.inaxes != ax:
         return
     startIndex = np.argmin(np.abs(xData - event.xdata))
-    indexClick = startIndex
+    dist1 = np.abs(yData[startIndex] - event.ydata)  # Đồ thị 1
+    dist2 = np.abs(yData2[startIndex] - event.ydata)  # Đồ thị 2
+    
+    # Kiểm tra đồ thị nào gần hơn
+    if dist1 < dist2:
+        indexClick = startIndex  # Chọn đồ thị 1
+        selectDoThi = False
+        print("Chọn đồ thị 1")
+    else:
+        indexClick = startIndex  # Chọn đồ thị 2
+        selectDoThi = True
+
+        print("Chọn đồ thị 2")
+    
     focus_on_item()
     for i in fitFunction:
         if i != 0:
@@ -1097,7 +1110,10 @@ def onMove(event):
     indexClick = endIndex
     focus_on_item()
     if endIndex > startIndex:
-        lineMM.set_data(xData[startIndex:endIndex+1], yData[startIndex:endIndex+1])
+        if not selectDoThi:
+            lineMM.set_data(xData[startIndex:endIndex+1], yData[startIndex:endIndex+1])
+        else:
+            lineMM.set_data(xData[startIndex:endIndex+1], yData2[startIndex:endIndex+1])
     
     fig.canvas.draw()
     
@@ -1115,6 +1131,9 @@ def onRelease(event):
     global startIndex, endIndex
     xFit = np.array(xData[startIndex:endIndex+1])
     yFit = np.array(yData[startIndex:endIndex+1])
+    if (selectDoThi):
+        yFit = np.array(yData2[startIndex:endIndex+1])
+
     # xFit = np.array([1, 2, 3, 4, 5])
     # yFit = np.array([1, 2, 3, 4, 5])
     startIndex = None
