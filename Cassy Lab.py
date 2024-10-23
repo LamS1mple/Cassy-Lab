@@ -115,12 +115,11 @@ def changeDisplayValue():
 def readData():
     global dataText, UA1, UB1
     while not stop_eventData.is_set():
-        print(1)
         l = len(listDisplayValue)
         try:
             data = arduino.readline().decode().strip()
             if data:
-                print(data)
+                # print(data)
                 dataText = data.split("|")
                 if UA1 is not None:
                     UA1 = float(dataText[0])
@@ -154,7 +153,7 @@ def perform_resize(event):
         dx -= 10
     new_width = frame.winfo_width() + dx 
     
-    print(1)
+    # print(1)
     if new_width > 50:  # Đảm bảo kích thước không quá nhỏ
         frame.config(width=new_width)
         drag_data = {"x": event.x, "y": event.y}
@@ -163,7 +162,8 @@ def updateMatplotlib():
     global plt
 
     lineM.set_data(np.array(xData), np.array(yData) )
-    lineN.set_data(np.array(xData), np.array(yData2))
+    if ( yAxis2.get() != 'off'):
+        lineN.set_data(np.array(xData), np.array(yData2))
     canvas.draw()
     pass
 def onpick(event):
@@ -200,6 +200,7 @@ def matplotlib():
     fig, ax = plt.subplots()
     lineM , = ax.plot([], [], marker = ".", picker = True)
     lineN , = ax.plot([], [], marker = ".", picker = True)
+    ax.legend()
     plt.gca().spines['top'].set_visible(False)
     plt.gca().spines['right'].set_visible(False)
     fig.canvas.mpl_connect('button_press_event', onClick)
@@ -431,7 +432,7 @@ def defCassy(frameMain):
     label2.bind("<Button-1>", click_u2)
 
 
-    print(1)
+    # print(1)
 
 
 def defFFT(frameMain):
@@ -657,6 +658,7 @@ def defDisplay(frameMain):
     tk.Label(frameDisplay, text="Y-Axes2:").grid(row=1, column=5, padx=10, pady=5, sticky='w')
     z = ttk.Combobox(frameDisplay, values=changeValueComboboxDisplay(), textvariable=yAxis2, state='readonly')
     z.grid(row=1, column=6, padx=10, pady=5)
+    z.set("off")
     
     # X-Axis Transformation Options
     x_frame = tk.LabelFrame(frameDisplay, text="X-Axis Transformation")
@@ -873,14 +875,17 @@ def changeRecording():
     timeStart = 0
 
 def startReadValue (event = None):
-
+    global lineM, lineN, ax
+    lineM.set_label(yAxis.get())
+    lineN.set_label(yAxis2.get())
+    ax.legend()
     changeValueAxis()
     global timeStart, n, time
     n = 0
     if timeStart == 0:
         timeStart = int(TIME.time())
     time = 0
-    print(recording_mode.get())
+    # print(recording_mode.get())
     if recording_mode.get() == 2:
         timeCurrent = int(TIME.time())
         between = timeCurrent - timeStart
@@ -912,6 +917,7 @@ def startReadValue (event = None):
         pass
 def threadingPart2Insert():
     print(measInter.get(), measTime.get())
+    print(yAxis2.get())
     timeEnd = 0
     global n ,time
     rou = measInter.get() / 1000
@@ -919,7 +925,7 @@ def threadingPart2Insert():
         if  stop_eventInsert.is_set(): 
             
             break
-        print(2)
+        # print(2)
         data = [round(timeEnd,2), n]
         if xAxis.get() == 't':
             xData.append(timeEnd)
@@ -940,7 +946,7 @@ def threadingPart2Insert():
                 xData.append(value)
             if yAxis.get() == listDisplayValue[i].symbol:
                 yData.append(value)
-            if yAxis2.get() == listDisplayValue[i].symbol:
+            if  yAxis2.get() != 'off' and yAxis2.get() == listDisplayValue[i].symbol :
                 yData2.append(value)
         try:
             tableView.insert("", 'end', values=data)
@@ -1036,9 +1042,9 @@ def changelength():
         bottom = yData[0] - 5
     if (top <= yData[-1]):
         top = yData[-1] + 5
-    if (bottom > yData2[0]):
+    if ( yAxis2.get() != 'off' and bottom > yData2[0]):
         bottom = yData2[0] - 5
-    if (top <= yData2[-1]):
+    if (yAxis2.get() != 'off' and  top <= yData2[-1]):
         top = yData2[-1] + 5
     ax.set_xlim(left, right)
     ax.set_ylim(bottom, top)
@@ -1068,22 +1074,24 @@ def focus_on_item():
     tableView.see(indexView)
 def onClick(event):
     global lineMM, indexClick,startIndex, selectDoThi
+    selectDoThi = False
     check = True
     if event.inaxes != ax:
         return
     startIndex = np.argmin(np.abs(xData - event.xdata))
     dist1 = np.abs(yData[startIndex] - event.ydata)  # Đồ thị 1
-    dist2 = np.abs(yData2[startIndex] - event.ydata)  # Đồ thị 2
-    
+    dist2 = 0
+    if (yAxis2.get() != 'off'):
+        dist2 = np.abs(yData2[startIndex] - event.ydata)  # Đồ thị 2
+    print(yAxis2.get())
     # Kiểm tra đồ thị nào gần hơn
-    if dist1 < dist2:
+    if yAxis2.get() == 'off' or dist1 < dist2:
         indexClick = startIndex  # Chọn đồ thị 1
         selectDoThi = False
         print("Chọn đồ thị 1")
     else:
         indexClick = startIndex  # Chọn đồ thị 2
         selectDoThi = True
-
         print("Chọn đồ thị 2")
     
     focus_on_item()
@@ -1100,7 +1108,7 @@ def onClick(event):
     
     print(startIndex)
 def onMove(event):
-    global endIndex, indexClick , lineMM
+    global endIndex, indexClick , lineMM, selectDoThi
     if event.inaxes != ax :
         return
     
@@ -1175,6 +1183,7 @@ window.bind("<Button-3>", on_right_click)
 recording_mode.trace('w', changeRecording)
 
 openWindowF5()
+
 
 def on_closing():
 
