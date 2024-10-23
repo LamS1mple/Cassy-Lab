@@ -42,10 +42,11 @@ endIndex = None
 highlighted_line = None
 xData = []
 yData = []
+yData2 = []
 # global variable
 xAxis = None
 yAxis = None
-
+yAxis2 = None
 
 increase = 1
 UA1 = None
@@ -162,6 +163,7 @@ def updateMatplotlib():
     global plt
 
     lineM.set_data(np.array(xData), np.array(yData) )
+    lineN.set_data(np.array(xData), np.array(yData2))
     canvas.draw()
     pass
 def onpick(event):
@@ -193,10 +195,11 @@ def matplotlib():
     tableView.configure(xscrollcommand=scrollbar_x.set)
     
     # Tạo một figure cho matplotlib
-    global fig , ax, lineM
+    global fig , ax, lineM, lineN
 
     fig, ax = plt.subplots()
     lineM , = ax.plot([], [], marker = ".", picker = True)
+    lineN , = ax.plot([], [], marker = ".", picker = True)
     plt.gca().spines['top'].set_visible(False)
     plt.gca().spines['right'].set_visible(False)
     fig.canvas.mpl_connect('button_press_event', onClick)
@@ -313,11 +316,14 @@ def show_u1_box():
 
 def click_u1(event):
     global UA1
-    UA1 = float(dataText[0])
-    label1.config(text="UA1")
-    show_u1_box()
-    changeDisplayValue()
-    listDisplayValue[0].createDisplay(window)
+    try:
+        UA1 = float(dataText[0])
+        label1.config(text="UA1")
+        show_u1_box()
+        changeDisplayValue()
+        listDisplayValue[0].createDisplay(window)
+    except:
+        pass
 def show_u2_box():
    
 
@@ -393,15 +399,17 @@ def show_u2_box():
 
 def click_u2(event):
     global UB1
-    UB1 = float(dataText[1])
-    label2.config(text="UB1")
-    show_u2_box()
-    changeDisplayValue()
-    if UA1 is not None:
-        listDisplayValue[1].createDisplay(window)
-    else:
-        listDisplayValue[0].createDisplay(window)
-
+    try:
+        UB1 = float(dataText[1])
+        label2.config(text="UB1")
+        show_u2_box()
+        changeDisplayValue()
+        if UA1 is not None:
+            listDisplayValue[1].createDisplay(window)
+        else:
+            listDisplayValue[0].createDisplay(window)
+    except: 
+        pass
 
 def defCassy(frameMain):
     global label1
@@ -628,12 +636,14 @@ def defDisplay(frameMain):
     # Buttons for New Display and Clear Display
     tk.Button(frameDisplay, text="New Display").grid(row=0, column=2, padx=10, pady=5)
     tk.Button(frameDisplay, text="Clear Display").grid(row=0, column=3, padx=10, pady=5)
-    global xAxis, yAxis
+    global xAxis, yAxis, yAxis2
     # X-Axis and Y-Axis
     xAxis = tk.StringVar()
     yAxis = tk.StringVar()
+    yAxis2 = tk.StringVar()
     xAxis.set("t")
     yAxis.set("n")
+    yAxis2.set("off")
     tk.Label(frameDisplay, text="X-Axis:").grid(row=1, column=0, padx=10, pady=5, sticky='w')
     x = ttk.Combobox(frameDisplay, values = changeValueComboboxDisplay(),textvariable=xAxis , state='readonly')
     x.grid(row=1, column=1, padx=10, pady=5)
@@ -644,6 +654,10 @@ def defDisplay(frameMain):
     y.grid(row=1, column=3, padx=10, pady=5)
     y.current(1)
 
+    tk.Label(frameDisplay, text="Y-Axes2:").grid(row=1, column=5, padx=10, pady=5, sticky='w')
+    z = ttk.Combobox(frameDisplay, values=changeValueComboboxDisplay(), textvariable=yAxis2, state='readonly')
+    z.grid(row=1, column=6, padx=10, pady=5)
+    
     # X-Axis Transformation Options
     x_frame = tk.LabelFrame(frameDisplay, text="X-Axis Transformation")
     x_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky='ew')
@@ -915,6 +929,10 @@ def threadingPart2Insert():
             xData.append(n)
         if yAxis.get() == 'n':
             yData.append(n)
+        if yAxis2.get() == 't':
+            yData2.append(timeEnd)
+        if yAxis2.get() == 'n':
+            yData2.append(n)
         for i in range(len(listDisplayValue)):
             value = round(float (eval(listDisplayValue[i].formula)), 2)
             data.append(value)
@@ -922,6 +940,8 @@ def threadingPart2Insert():
                 xData.append(value)
             if yAxis.get() == listDisplayValue[i].symbol:
                 yData.append(value)
+            if yAxis2.get() == listDisplayValue[i].symbol:
+                yData2.append(value)
         try:
             tableView.insert("", 'end', values=data)
             updateMatplotlib()
@@ -1016,6 +1036,10 @@ def changelength():
         bottom = yData[0] - 5
     if (top <= yData[-1]):
         top = yData[-1] + 5
+    if (bottom > yData2[0]):
+        bottom = yData2[0] - 5
+    if (top <= yData2[-1]):
+        top = yData2[-1] + 5
     ax.set_xlim(left, right)
     ax.set_ylim(bottom, top)
 
@@ -1140,7 +1164,6 @@ def on_closing():
 
     stop_eventData.set()
     stop_eventInsert.set()
-    window.destroy()
     window.quit()
     print("out")
     
